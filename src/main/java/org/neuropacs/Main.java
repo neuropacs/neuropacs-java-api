@@ -6,12 +6,18 @@ package org.neuropacs;
 //import java.io.File;
 //import java.io.IOException;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) {
-        String serverUrl = "https://aw75e2na5m.execute-api.us-east-1.amazonaws.com/dev";
-        String apiKey = "Wa02MlTrzgaFHEwIZVngda916g6893M7apqvQTFc";
+        String serverUrl = "";
+        String apiKey = ""; // DELETE THIS
         String originType = "Java";
 
         Neuropacs npcs = new Neuropacs(serverUrl, apiKey, originType);
@@ -19,45 +25,45 @@ public class Main {
         String connection = npcs.connect();
         System.out.println(connection);
 
-//        String order = npcs.newJob();
-//        System.out.println("New order: " + order);
+        String order = npcs.newJob();
+        System.out.println("New order: " + order);
 
-//        int upload = npcs.uploadDataset("/Users/kerrickcavanaugh/Desktop/sample data/06_011", order);
+        int upload = npcs.uploadDataset("/Users/kerrickcavanaugh/Desktop/sample data/06_011", order);
 
-//        String status = npcs.checkStatus("0a90258e-e0bf-4697-bfbc-37ee6147c1ab");
-//        System.out.println(status);
+        String status = npcs.checkStatus("TEST");
+        System.out.println(status);
 
-//        String results = npcs.getResults("json", "TEST");
-//        System.out.println(results);
+        String results = npcs.getResults("json", "TEST");
+        System.out.println(results);
 
-//        byte[] resultPng = npcs.getResultsPng("TEST");
+        byte[] resultPng = npcs.getResultsPng("TEST");
 
-//        try {
-//            // Convert byte[] to BufferedImage
-//            BufferedImage img = generateImageFromBytes(resultPng);
-//
-//            // Save the image to a file (optional)
-//            ImageIO.write(img, "png", new File("output_image.png"));
-//
-//            System.out.println("Image generated and saved successfully.");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            // Convert byte[] to BufferedImage
+            BufferedImage img = generateImageFromBytes(resultPng);
+
+            // Save the image to a file (optional)
+            ImageIO.write(img, "png", new File("output_image.png"));
+
+            System.out.println("Image generated and saved successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
-//    public static BufferedImage generateImageFromBytes(byte[] imageBytes) throws IOException {
-//        // Convert byte[] to an InputStream
-//        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
-//
-//        // Read the input stream into a BufferedImage
-//        BufferedImage image = ImageIO.read(bais);
-//
-//        // Check if the image was read correctly
-//        if (image == null) {
-//            throw new IOException("Could not decode image from the provided byte array.");
-//        }
-//
-//        return image;
-//    }
+    public static BufferedImage generateImageFromBytes(byte[] imageBytes) throws IOException {
+        // Convert byte[] to an InputStream
+        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+
+        // Read the input stream into a BufferedImage
+        BufferedImage image = ImageIO.read(bais);
+
+        // Check if the image was read correctly
+        if (image == null) {
+            throw new IOException("Could not decode image from the provided byte array.");
+        }
+
+        return image;
+    }
 }

@@ -706,7 +706,6 @@ public class Neuropacs {
         try{
 
             // Get presigned URL for chunk upload \\
-            System.out.println("Uploading multipart chunk with uploadId: " + uploadId);
             // Build request
             URI uri = URI.create(this.serverUrl + "/api/multipartPresignedUrl/");
 
