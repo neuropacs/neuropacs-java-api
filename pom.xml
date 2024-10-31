@@ -4,12 +4,37 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
-    <artifactId>neuropacs-api</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.neuropacs</groupId>
+    <artifactId>neuropacs-java-api</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
 
-    <name>neuropacs-java-api</name>
-    <url>http://www.neuropacs.com</url>
+    <name>neuropacs-js-api</name>
+    <description>The neuropacs™ system is a software application intended to receive and analyze diffusion MRI data from patients aged 40 years and older presenting with Parkinson's disease (PD) symptoms. The neuropacs™ system provides a report to aid neuroradiologists and/or neurologists in identifying patients with Atypical Parkinsonism (i.e., multiple system atrophy Parkinsonian variant (MSAp), or progressive supranuclear palsy (PSP)). The results of the neuropacs™ system are intended to provide supplemental information in conjunction with a standard neurological assessment and other clinical tests.</description>
+    <url>https://neuropacs.github.io/</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Kerrick Cavanaugh</name>
+            <email>kerrick@neuropacs.com</email>
+            <organization>neuropacs</organization>
+            <organizationUrl>https://neuropacs.com</organizationUrl>
+        </developer>
+    </developers>
+
+
+    <scm>
+        <connection>scm:git:git://github.com/neuropacs/neuropacs-java-api.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neuropacs/neuropacs-java-api.git</developerConnection>
+        <url>https://github.com/neuropacs/neuropacs-java-api/tree/master</url>
+    </scm>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

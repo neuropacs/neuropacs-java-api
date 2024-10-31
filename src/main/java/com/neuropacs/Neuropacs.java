@@ -4,15 +4,9 @@
  * Author: Kerrick Cavanaugh
  * Date Created: 09/15/2024
  * Last Updated: 09/30/2024
- *
- * ---------- Audit Log ---------- *
- * 09/15/2024 - Initial creation
- * 09/16/2024 - Implemented AES and OAEP encryption methods
- * 09/26/2024 - Added mulitpart upload functionality
- * 09/30/2024 - Completed core logic
  */
 
-package org.neuropacs;
+package com.neuropacs;
 
 // Dependencies
 import java.io.*;
