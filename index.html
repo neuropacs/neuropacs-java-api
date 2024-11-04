@@ -160,33 +160,19 @@
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
 
     <span class="code-comment"># Upload a dataset</span>
-    <span class="code-keyword">const</span> upload = <span class="code-keyword">await</span> npcs.<span class="code-function">upload_dataset</span>({
-        dataset: dataset,
-        orderId: orderId,
-        datasetId: orderId,
-        callback: (info) => {
-          console.log(info);
-        }
-      });
+    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">upload_dataset</span>("/path/to/dataset", orderId);
 
     <span class="code-comment"># Start an order</span>
-    <span class="code-keyword">const</span> order_start = <span class="code-keyword">await</span> npcs.<span class="code-function">runJob</span>({
-        productName: productName,
-        orderId: orderId
-      });
+    <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(productName, orderId);
 
     <span class="code-comment"># Check order status</span>
-    <span class="code-keyword">const</span> status = <span class="code-keyword">await</span> npcs.<span class="code-function">checkStatus</span>({
-        orderId: orderId
-      });
+    <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
 
     <span class="code-comment"># Retrieve job results</span>
-    <span class="code-keyword">const</span> results = <span class="code-keyword">await</span> npcs.<span class="code-function">getResults</span>({
-        format: predictionFormat,
-        dataType: predictionDataType,
-        orderId: orderId
-      });
-        </code></pre>
+    <span class="code-keyword">String</span> status = npcs.<span class="code-function">getResults</span>(predictionFormat, orderId);
+
+    <span class="code-comment"># Retrieve job results in PNG</span>
+    <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
       </section>
 
       <section id="contact">
@@ -233,6 +219,11 @@
           <li>
             <a href="https://neuropacs.github.io/neuropacs-py-api/"
               >Python API</a
+            >
+          </li>
+          <li>
+            <a href="https://neuropacs.github.io/neuropacs-js-api/"
+              >JavaScript API</a
             >
           </li>
           <li>
