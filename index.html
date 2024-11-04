@@ -109,19 +109,25 @@
               <tbody>
                 <tr>
                   <td>1.0.0</td>
-                  <td>todo</td>
+                  <td>6.5MB</td>
                   <td>neuropacs™ Java API latest release</td>
-                  <td>todo</td>
+                  <td>
+                    https://d3tequ3xv41td3.cloudfront.net/java/neuropacs-java-api-1.0.0.jar
+                  </td>
                 </tr>
               </tbody>
             </table>
             <li>
               Include JAR file in project
               <ul>
-                <li>For Command Line:</li>
+                <li>For Command Line (w/out Maven):</li>
                 <pre
                   class="code-container"
-                >java -cp path/to/your-sdk.jar com.yourpackage.YourMainClass<code class="language-shell"></code></pre>
+                ># Compile your Java class with the local JAR file
+javac -cp path/to/neuropacs-java-api-&lt;version&gt;.jar -d out src/com/yourpackage/YourMainClass.java
+
+# Run the program
+java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.YourMainClass<code class="language-shell"></code></pre>
                 <li>For an IDE</li>
                 <p>
                   <strong>IntelliJ IDEA:</strong> Go to File > Project Structure
@@ -141,7 +147,7 @@
         <h2>Usage</h2>
         <h3>Initialization</h3>
         <pre class="code-container"><code class="language-shell">
-    <span class="code-keyword">import com.neuropacs.todo</span>
+    <span class="code-keyword">import com.neuropacs.Neuropacs</span>
 
     <span class="code-comment"># Define neuropacs parameters</span>
     <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key"</span> <span class="code-comment"># API key</span>
