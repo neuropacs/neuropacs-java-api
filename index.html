@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>neuropacs™ Java API</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-content">
+        <div class="header-text">
+          <h1>neuropacs™ Java API</h1>
+          <p>
+            Our Java API enables seamless integration with our product's
+            capabilities in any Java-based environment.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <nav class="navbar">
+      <ul>
+        <li><a href="https://neuropacs.github.io/">Home</a></li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#products">Available Products</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#usage">Usage</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="#license">License</a></li>
+        <li><a href="#explore">Explore</a></li>
+
+        <!-- <li><a href="#faq">FAQ</a></li> -->
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>
+          Your software is <strong>5 lines away</strong> from accurately
+          diagnosing Parkinson's variations.
+        </p>
+        <p>
+          This wiki provides documentation and examples to guide users in
+          quickly integrating and customizing the SDK to fit various
+          applications.
+        </p>
+        <p>
+          The neuropacs™ system is a software application intended to receive
+          and analyze diffusion MRI data from patients aged 40 years and older
+          presenting with Parkinson's disease (PD) symptoms. The neuropacs™
+          system provides a report to aid neuroradiologists and/or neurologists
+          in identifying patients with Atypical Parkinsonism (i.e., multiple
+          system atrophy Parkinsonian variant (MSAp), or progressive
+          supranuclear palsy (PSP)). The results of the neuropacs™ system are
+          intended to provide supplemental information in conjunction with a
+          standard neurological assessment and other clinical tests.
+          <strong
+            >Patient management decisions should not be made solely on the basis
+            of analysis by the neuropacs™ system.</strong
+          >
+        </p>
+      </section>
+
+      <section id="products">
+        <h2>Available Products</h2>
+        <ul>
+          <li>
+            Atypical/MSAp/PSP-v1.0
+            <p class="subtext">
+              Identify patients with Atypical Parkinsonism (i.e., multiple
+              system atrophy Parkinsonian variant (MSAp), or progressive
+              supranuclear palsy (PSP)).
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section id="installation">
+        <h2>Installation</h2>
+        <h3>Include in project</h3>
+        <ul>
+          <p><strong>Option 1:</strong> Install via Maven</p>
+          <ol>
+            <li>Add the SDK Dependency to pom.xml</li>
+            <pre class="code-container"><code>&lt;dependency&gt;
+    &lt;groupId&gt;com.neuropacs&lt;/groupId&gt;
+    &lt;artifactId&gt;your-sdk-artifact&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+            <li>Build the project</li>
+            <pre
+              class="code-container"
+            >mvn clean install<code class="language-shell"></code></pre>
+          </ol>
+          <p><strong>Option 2:</strong> Add JAR file to the project</p>
+          <ol>
+            <li>Download JAR file (via 'wget' or manually)</li>
+            <table class="info-table">
+              <thead>
+                <tr>
+                  <th>Version</th>
+                  <th>Size</th>
+                  <th>Description</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1.0.0</td>
+                  <td>todo</td>
+                  <td>neuropacs™ Java API latest release</td>
+                  <td>todo</td>
+                </tr>
+              </tbody>
+            </table>
+            <li>
+              Include JAR file in project
+              <ul>
+                <li>For Command Line:</li>
+                <pre
+                  class="code-container"
+                >java -cp path/to/your-sdk.jar com.yourpackage.YourMainClass<code class="language-shell"></code></pre>
+                <li>For an IDE</li>
+                <p>
+                  <strong>IntelliJ IDEA:</strong> Go to File > Project Structure
+                  > Libraries and add the JAR file.
+                </p>
+                <p>
+                  <strong>Eclipse:</strong> Right-click on the project > Build
+                  Path > Add External Archives... and select the JAR file.
+                </p>
+              </ul>
+            </li>
+          </ol>
+        </ul>
+      </section>
+
+      <section id="usage">
+        <h2>Usage</h2>
+        <h3>Initialization</h3>
+        <pre class="code-container"><code class="language-shell">
+    <span class="code-comment"># Define neuropacs parameters</span>
+    <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key"</span> <span class="code-comment"># API key</span>
+    <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url"</span> <span class="code-comment"># neuropacs™ serverl URL</span>
+    <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0"</span> <span class="code-comment"># Desired neuropacs™ product</span>
+    <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON"</span> <span class="code-comment"># Output format of results</span>
+    <span class="code-keyword">String</span> originType = <span class="code-string">"my_application"</span> <span class="code-comment"># Requestor origin</span>
+
+    <span class="code-comment"># Initialize the API</span>
+    <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> Neuropacs(serverUrl, apiKey, originType);
+        </code></pre>
+        <h3>Example</h3>
+        <pre class="code-container"><code class="language-python">
+    <span class="code-comment"># Create a neuropacs™ session</span>
+    <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
+
+    <span class="code-comment"># Create a new order</span>
+    <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
+
+    <span class="code-comment"># Upload a dataset</span>
+    <span class="code-keyword">const</span> upload = <span class="code-keyword">await</span> npcs.<span class="code-function">upload_dataset</span>({
+        dataset: dataset,
+        orderId: orderId,
+        datasetId: orderId,
+        callback: (info) => {
+          console.log(info);
+        }
+      });
+
+    <span class="code-comment"># Start an order</span>
+    <span class="code-keyword">const</span> order_start = <span class="code-keyword">await</span> npcs.<span class="code-function">runJob</span>({
+        productName: productName,
+        orderId: orderId
+      });
+
+    <span class="code-comment"># Check order status</span>
+    <span class="code-keyword">const</span> status = <span class="code-keyword">await</span> npcs.<span class="code-function">checkStatus</span>({
+        orderId: orderId
+      });
+
+    <span class="code-comment"># Retrieve job results</span>
+    <span class="code-keyword">const</span> results = <span class="code-keyword">await</span> npcs.<span class="code-function">getResults</span>({
+        format: predictionFormat,
+        dataType: predictionDataType,
+        orderId: orderId
+      });
+        </code></pre>
+      </section>
+
+      <section id="contact">
+        <h2>Contact</h2>
+        <p>
+          Kerrick Cavanaugh (<em>Lead Software Engineer</em>) -
+          kerrick@neuropacs.com
+        </p>
+      </section>
+
+      <section id="license">
+        <h2>License</h2>
+        <p>
+          This project is licensed under the
+          <a
+            href="https://github.com/neuropacs/neuropacs-py-api/blob/main/LICENSE"
+            target="_blank"
+            >MIT</a
+          >.
+        </p>
+      </section>
+
+      <section id="explore">
+        <h2>Explore</h2>
+        <h3>Integrations</h3>
+        <p>
+          Explore the different systems and software that our product integrates
+          with. Click each integration for detailed setup and usage
+          instructions.
+        </p>
+        <ul class="integration-list">
+          <li>
+            <a href="https://neuropacs.github.io/SlicerNeuropacs/">3D Slicer</a>
+          </li>
+          <!-- <li><a href="weasis.html">Weasis DICOM Viewer</a></li> -->
+        </ul>
+        <h3>Supported Programming Languages</h3>
+        <p>
+          Our product supports various programming languages to offer
+          flexibility in development. Click each language for APIs, libraries,
+          and examples.
+        </p>
+        <ul class="language-list">
+          <li>
+            <a href="https://neuropacs.github.io/neuropacs-py-api/"
+              >Python API</a
+            >
+          </li>
+          <li>
+            <a href="https://neuropacs.github.io/neuropacs-cli/">CLI</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- <section id="faq">
+        <h2>FAQ</h2>
+        <p><strong>Q1:</strong> How do I contribute to this project?</p>
+        <p>
+          <strong>A1:</strong> Fork the repository and submit a pull request.
+        </p>
+      </section> -->
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2024 neuropacs™. All rights reserved.</p>
+    </footer>
+  </body>
+</html>
