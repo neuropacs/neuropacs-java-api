@@ -796,15 +796,9 @@ public class Neuropacs {
      * @param datasetPath String path to dataset to be uploaded
      * @param orderId Base64 orderId
      * @param datasetId Base64 datasetId
-     * @return 0 on success, 1 on failure
      */
-    private int attemptUploadDataset(String datasetPath, String orderId, String datasetId){
-        try{
-            uploadZipContents(datasetPath, orderId);
-            return 0;
-        } catch (Exception e) {
-            return 1;
-        }
+    private void attemptUploadDataset(String datasetPath, String orderId, String datasetId){
+        uploadZipContents(datasetPath, orderId, datasetId);
     }
 
 
@@ -932,7 +926,7 @@ public class Neuropacs {
 
 
     /**
-     * Upload a dataset to neuropacs S3 bucket
+     * Upload a dataset to neuropacs S3 bucket (default)
      * @param datasetPath Path to dataset (String)
      * @param orderId Base64 orderId
      * @return 0 on success
@@ -946,11 +940,81 @@ public class Neuropacs {
             }
 
             // Attempt upload dataset
-            attemptUploadDataset(datasetPath, orderId, datasetPath);
+            attemptUploadDataset(datasetPath, orderId, orderId);
             return 0;
         } catch (Exception e) {
             // Throw error
             throw new RuntimeException("Dataset upload failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Upload a dataset to neuropacs S3 bucket (specify datasetId)
+     * @param datasetPath Path to dataset (String)
+     * @param orderId Base64 orderId
+     * @param datasetId Base64 datasetId
+     * @return 0 on success
+     */
+    public int uploadDataset(String datasetPath, String orderId, String datasetId){
+        try {
+            // Check if datasetPath exists and is a directory
+            Path directoryPath = Paths.get(datasetPath);
+            if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
+                throw new RuntimeException("datasetPath does not exist.");
+            }
+
+            // Attempt upload dataset
+            attemptUploadDataset(datasetPath, orderId, datasetId);
+            return 0;
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("Dataset upload failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Run an order
+     * @param productName Name of product to be executed
+     * @param orderId Base64 orderId
+     * @return Response code of request
+     */
+    public int runJob(String productName, String orderId){
+        try{
+            // Build URI
+            URI uri = URI.create(this.serverUrl + "/api/runJob/");
+
+            // Build request body
+            String requestBody = String.format("{ \"productName\": \"%s\", \"orderId\": \"%s\" }", productName, orderId);
+
+            // Encrypt request body
+            byte[] encryptedBody = this.encryptAesCtr(requestBody, this.aesKey);
+
+            // Build the HTTP request
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Content-Type", "text/plain")
+                    .header("Origin-Type", this.originType)
+                    .header("Connection-Id", this.connectionId)
+                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedBody)))
+                    .build();
+
+            // Get response
+            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            Map<String, String> jsonMap;
+
+            // Error if not successful
+            if(response.statusCode() != 202){
+                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                throw new RuntimeException(jsonMap.get("error"));
+            }
+
+            return response.statusCode();
+
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("Job run failed: " + e.getMessage(), e);
         }
     }
 
