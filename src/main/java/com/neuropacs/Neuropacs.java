@@ -935,7 +935,7 @@ public class Neuropacs {
      * Upload a dataset to neuropacs S3 bucket
      * @param datasetPath Path to dataset (String)
      * @param orderId Base64 orderId
-     * @return
+     * @return 0 on success
      */
     public int uploadDataset(String datasetPath, String orderId){
         try {
