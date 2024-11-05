@@ -139,10 +139,10 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
 
     <span class="code-comment">// Retrieve job results</span>
-    <span class="code-keyword">String</span> status = npcs.<span class="code-function">getResults</span>(predictionFormat, orderId);
+    <span class="code-keyword">String</span> results = npcs.<span class="code-function">getResults</span>(predictionFormat, orderId);
 
     <span class="code-comment">// Retrieve job results in PNG</span>
-    <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
+    <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
     </code></pre>
         <h3>Viewing a PNG result</h3>
         <pre class="code-container"><code class="language-java">
@@ -153,10 +153,10 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">import</span> java.io.File;
 
     <span class="code-comment">// Retrieve job results in PNG</span>
-    <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
+    <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
 
     <span class="code-comment">// Convert byte[] to an InputStream</span>
-    <span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(imageBytes);
+    <span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(resultsPng);
 
     <span class="code-comment">// Read the input stream into a BufferedImage</span>
     <span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
