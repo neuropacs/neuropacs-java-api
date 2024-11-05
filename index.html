@@ -145,26 +145,26 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
     </code></pre>
         <h3>Viewing a PNG result</h3>
-        <pre
-          class="code-container"
-        ><code class="language-java"><span class="code-comment">// Import required packages</span>
-<span class="code-keyword">import</span> com.neuropacs.Neuropacs;
-<span class="code-keyword">import</span> javax.imageio.ImageIO;
-<span class="code-keyword">import</span> java.awt.image.BufferedImage;
-<span class="code-keyword">import</span> java.io.ByteArrayInpudtStream;
-<span class="code-keyword">import</span> java.io.File;
+        <pre class="code-container"><code class="language-java">
+    <span class="code-comment">// Import required packages</span>
+    <span class="code-keyword">import</span> com.neuropacs.Neuropacs;
+    <span class="code-keyword">import</span> javax.imageio.ImageIO;
+    <span class="code-keyword">import</span> java.awt.image.BufferedImage;
+    <span class="code-keyword">import</span> java.io.ByteArrayInpudtStream;
+    <span class="code-keyword">import</span> java.io.File;
 
-<span class="code-comment">// Retrieve job results in PNG</span>
-<span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
+    <span class="code-comment">// Retrieve job results in PNG</span>
+    <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
 
-<span class="code-comment">// Convert byte[] to an InputStream</span>
-<span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(imageBytes);
+    <span class="code-comment">// Convert byte[] to an InputStream</span>
+    <span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(imageBytes);
 
-<span class="code-comment">// Read the input stream into a BufferedImage</span>
-<span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
+    <span class="code-comment">// Read the input stream into a BufferedImage</span>
+    <span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
 
-<span class="code-comment">// Save the image to a file</span>
-<span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
+    <span class="code-comment">// Save the image to a file</span>
+    <span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
+    
 </code></pre>
       </section>
 
