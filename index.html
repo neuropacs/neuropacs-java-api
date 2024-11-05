@@ -157,11 +157,11 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">String</span> originType = <span class="code-string">"my_application"</span> <span class="code-comment"># Requestor origin</span>
 
     <span class="code-comment"># Initialize the API</span>
-    <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> Neuropacs(serverUrl, apiKey, originType);
+    <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
         </code></pre>
         <h3>Example</h3>
         <pre class="code-container"><code class="language-python">
-    <span class="code-comment"># Create a neuropacs™ session</span>
+    <span class="code-comment"># Create a session</span>
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
 
     <span class="code-comment"># Create a new order</span>
