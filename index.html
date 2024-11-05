@@ -105,37 +105,37 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
         <pre class="code-container"><code class="language-shell">
     <span class="code-keyword">import com.neuropacs.Neuropacs</span>
 
-    <span class="code-comment"># Define neuropacs parameters</span>
-    <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key"</span> <span class="code-comment"># API key</span>
-    <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url"</span> <span class="code-comment"># neuropacs™ serverl URL</span>
-    <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0"</span> <span class="code-comment"># Desired neuropacs™ product</span>
-    <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON"</span> <span class="code-comment"># Output format of results</span>
-    <span class="code-keyword">String</span> originType = <span class="code-string">"my_application"</span> <span class="code-comment"># Requestor origin</span>
+    <span class="code-comment">// Define neuropacs parameters</span>
+    <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key";</span> <span class="code-comment">// API key</span>
+    <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url";</span> <span class="code-comment">// neuropacs™ serverl URL</span>
+    <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0";</span> <span class="code-comment">// Desired neuropacs™ product</span>
+    <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON";</span> <span class="code-comment">// Output format of results</span>
+    <span class="code-keyword">String</span> originType = <span class="code-string">"my_application";</span> <span class="code-comment">// Requestor origin</span>
 
-    <span class="code-comment"># Initialize the API</span>
+    <span class="code-comment">// Initialize the API</span>
     <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
         </code></pre>
         <h3>Example</h3>
         <pre class="code-container"><code class="language-python">
-    <span class="code-comment"># Create a session</span>
+    <span class="code-comment">// Create a session</span>
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
 
-    <span class="code-comment"># Create a new order</span>
+    <span class="code-comment">// Create a new order</span>
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
 
-    <span class="code-comment"># Upload a dataset</span>
+    <span class="code-comment">// Upload a dataset</span>
     <span class="code-keyword">int</span> upload = npcs.<span class="code-function">upload_dataset</span>("/path/to/dataset", orderId);
 
-    <span class="code-comment"># Start an order</span>
+    <span class="code-comment">// Start an order</span>
     <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(productName, orderId);
 
-    <span class="code-comment"># Check order status</span>
+    <span class="code-comment">// Check order status</span>
     <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
 
-    <span class="code-comment"># Retrieve job results</span>
+    <span class="code-comment">// Retrieve job results</span>
     <span class="code-keyword">String</span> status = npcs.<span class="code-function">getResults</span>(predictionFormat, orderId);
 
-    <span class="code-comment"># Retrieve job results in PNG</span>
+    <span class="code-comment">// Retrieve job results in PNG</span>
     <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
     </code></pre>
       </section>
