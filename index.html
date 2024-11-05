@@ -19,6 +19,13 @@
       </div>
     </header>
 
+    <div class="image-row">
+      <a href="https://github.com/neuropacs/neuropacs-java-api"
+        ><img src="/resources/github_logo.png"
+      /></a>
+      <a href="TODO"><img src="/resources/maven_logo.png" /></a>
+    </div>
+
     <nav class="navbar">
       <ul>
         <li><a href="https://neuropacs.github.io/">Home</a></li>
@@ -27,7 +34,6 @@
         <li><a href="#contact">Contact</a></li>
         <li><a href="#license">License</a></li>
         <li><a href="#explore">Explore</a></li>
-
         <!-- <li><a href="#faq">FAQ</a></li> -->
       </ul>
     </nav>
@@ -116,7 +122,7 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
         </code></pre>
         <h3>Example</h3>
-        <pre class="code-container"><code class="language-python">
+        <pre class="code-container"><code class="language-java">
     <span class="code-comment">// Create a session</span>
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
 
@@ -138,6 +144,28 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-comment">// Retrieve job results in PNG</span>
     <span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
     </code></pre>
+        <h3>Viewing a PNG result</h3>
+        <pre
+          class="code-container"
+        ><code class="language-java"><span class="code-comment">// Import required packages</span>
+<span class="code-keyword">import</span> com.neuropacs.Neuropacs;
+<span class="code-keyword">import</span> javax.imageio.ImageIO;
+<span class="code-keyword">import</span> java.awt.image.BufferedImage;
+<span class="code-keyword">import</span> java.io.ByteArrayInpudtStream;
+<span class="code-keyword">import</span> java.io.File;
+
+<span class="code-comment">// Retrieve job results in PNG</span>
+<span class="code-keyword">byte[]</span> status = npcs.<span class="code-function">getResultsPng</span>(orderId);
+
+<span class="code-comment">// Convert byte[] to an InputStream</span>
+<span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(imageBytes);
+
+<span class="code-comment">// Read the input stream into a BufferedImage</span>
+<span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
+
+<span class="code-comment">// Save the image to a file</span>
+<span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
+</code></pre>
       </section>
 
       <section id="contact">
