@@ -32,8 +32,11 @@ jobs:
 #          java-version: '17'
 #          distribution: 'temurin'
 
-      - name: Build with Maven
-        run: mvn clean compile -Dmaven.compiler.source=17 -Dmaven.compiler.target=17 -Dcompiler-plugin.version=3.10.1
+#      - name: Build with Maven
+#        run: mvn clean compile -Dmaven.compiler.source=17 -Dmaven.compiler.target=17 -Dcompiler-plugin.version=3.10.1
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
