@@ -99,7 +99,7 @@ Example viewing a PNG result
 
 ## Authors
 
-Kerrick Cavanaugh - kerrick@neuropacs.com
+Kerrick Cavanaugh *(Lead Software Engineer)* - kerrick@neuropacs.com
 
 ## Version History
 
