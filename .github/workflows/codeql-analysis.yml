@@ -38,6 +38,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
+          config-file: .github/codeql/codeql-config.yml
           queries: +security-extended
           languages: ${{ matrix.language }}
 
