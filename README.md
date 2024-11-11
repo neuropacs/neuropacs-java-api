@@ -25,7 +25,7 @@ Add the dependency to pom.xml
 <dependency>
     <groupId>com.neuropacs</groupId>
     <artifactId>neuropacs-java-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -60,17 +60,17 @@ Exmaple
     // Create a new order
     String conn = npcs.newJob();
 
-    // Upload a dataset
-    int upload = npcs.upload_dataset("/path/to/dataset", orderId);
+    // Upload a dataset from path
+    boolean upload = npcs.uploadDatasetFromPath(orderId, "/path/to/dataset");
 
     // Start an order
-    String orderStart = npcs.runJob(productName, orderId);
+    String orderStart = npcs.runJob(orderId, productName);
 
     // Check order status
     String status = npcs.checkStatus(orderId);
 
     // Retrieve job results
-    String results = npcs.getResults(predictionFormat, orderId);
+    String results = npcs.getResults(orderId, predictionFormat);
 
     // Retrieve job results in PNG
     byte[] resultsPng = npcs.getResultsPng(orderId);
