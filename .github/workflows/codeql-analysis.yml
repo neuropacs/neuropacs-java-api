@@ -32,6 +32,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Install custom dependencies
+      - name: Install Custom Dependencies
+        run: |
+          mvn install:install-file -Dfile=libs/dcm4che-core-5.33.1.jar \
+            -DgroupId=org.dcm4che \
+            -DartifactId=dcm4che-core \
+            -Dversion=5.33.1 \
+            -Dpackaging=jar
+          
+          mvn install:install-file -Dfile=libs/dcm4che-net-5.33.1.jar \
+            -DgroupId=org.dcm4che \
+            -DartifactId=dcm4che-net \
+            -Dversion=5.33.1 \
+            -Dpackaging=jar
+          
+          mvn install:install-file -Dfile=libs/dcm4che-json-5.33.1.jar \
+            -DgroupId=org.dcm4che \
+            -DartifactId=dcm4che-json \
+            -Dversion=5.33.1 \
+            -Dpackaging=jar
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
