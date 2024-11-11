@@ -6,8 +6,8 @@ import org.junit.Test;
 
 
 public class NeuropacsTest {
-    String serverUrl = "https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox";
-    String apiKey = "generate_api_key";
+    String serverUrl = "https://zq5jg2kqvj.execute-api.us-east-1.amazonaws.com/staging";
+    String apiKey = System.getenv("ADMIN_API_KEY");
     String invalidApiKey = "not_real";
     String productId = "Atypical/MSAp/PSP-v1.0";
     String originType = "Java Integration Tests";
