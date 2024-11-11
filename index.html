@@ -73,11 +73,11 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>1.0.0</td>
-                  <td>6.5MB</td>
+                  <td>1.0.1</td>
+                  <td>8.3MB</td>
                   <td>neuropacs™ Java API latest release</td>
                   <td>
-                    https://d3tequ3xv41td3.cloudfront.net/java/neuropacs-java-api-1.0.0.jar
+                    https://d3tequ3xv41td3.cloudfront.net/java/neuropacs-java-api-1.0.1.jar
                   </td>
                 </tr>
               </tbody>
@@ -132,17 +132,17 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-comment">// Create a new order</span>
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
 
-    <span class="code-comment">// Upload a dataset</span>
-    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">upload_dataset</span>("/path/to/dataset", orderId);
+    <span class="code-comment">// Upload a dataset from path</span>
+    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, "/path/to/dataset");
 
     <span class="code-comment">// Start an order</span>
-    <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(productName, orderId);
+    <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
 
     <span class="code-comment">// Check order status</span>
     <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
 
     <span class="code-comment">// Retrieve job results</span>
-    <span class="code-keyword">String</span> results = npcs.<span class="code-function">getResults</span>(predictionFormat, orderId);
+    <span class="code-keyword">String</span> results = npcs.<span class="code-function">getResults</span>(orderId, predictionFormat);
 
     <span class="code-comment">// Retrieve job results in PNG</span>
     <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
