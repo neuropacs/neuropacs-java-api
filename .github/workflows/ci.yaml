@@ -3,7 +3,7 @@ name: Integration Tests
 on:
   push:
     branches: # Run on push to main branch
-      - main
+      - master
   schedule: # Run everyday at 12am EST
     - cron: '0 5 * * *'
   workflow_dispatch: # Allow run from Actions tab
