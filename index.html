@@ -133,7 +133,7 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
 
     <span class="code-comment">// Upload a dataset from path</span>
-    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, "/path/to/dataset");
+    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, "/path/to/dataset", System.out::println);
 
     <span class="code-comment">// Start an order</span>
     <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
