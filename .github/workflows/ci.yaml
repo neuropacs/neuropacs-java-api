@@ -48,4 +48,4 @@ jobs:
 
       # Build with Maven & run integration tests
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean package -X
