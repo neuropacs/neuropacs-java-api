@@ -48,4 +48,4 @@ jobs:
 
       # Build with Maven & run integration tests
       - name: Build with Maven
-        run: mvn clean package -X
+        run: mvn clean package -Dmaven.compiler.source=17 -Dmaven.compiler.target=17 -Dcompiler-plugin.version=3.10.1
