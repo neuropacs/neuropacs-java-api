@@ -1,0 +1,30 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: # Run on push to main branch
+      - main
+  schedule: # Run everyday at 12am EST
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Allow run from Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Java (OpenJDK 17)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' # You can also use 'adopt', 'zulu', etc.
+          java-version: '17'
+          cache: maven
+
+      # Step 4: Run Maven Unit Tests
+      - name: Run Maven Tests
+        run: mvn clean test

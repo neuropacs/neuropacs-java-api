@@ -30,12 +30,27 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.function.Consumer;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
+
+import jakarta.json.Json;
+import jakarta.json.stream.JsonParser;
+import jakarta.mail.BodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.RemapUIDsAttributesCoercion;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.json.JSONReader;
+import org.dcm4che3.util.StreamUtils;
+
 
 // Neuropacs class
 public class Neuropacs {
@@ -43,10 +58,9 @@ public class Neuropacs {
     private String serverUrl;
     private String apiKey;
     private String originType;
-    private String aesKey;
-    private String orderId;
-    private String connectionId;
-    private long zipChunkSize = 50000000; // 5mb
+    private String aesKey = null;
+    private String connectionId = null;
+    private int maxZipSize = 15 * 1024 * 1024; // 15mb
     HttpClient client = HttpClient.newHttpClient();
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -307,286 +321,11 @@ public class Neuropacs {
     }
 
     /**
-     *  Zip dataset
-     * @param sources   List of file paths to be zipped
-     * @param zipFilenames  Corresponding list of file names to be zipped (maps to a source in sources)
-     * @return  Zip contents in byte[] format
-     * @throws IOException
-     */
-    private byte[] zipDataset(List<Path> sources, List<String> zipFilenames)
-            throws IOException {
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-        try (ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream)) {
-            int srcIndex = 0;
-            // Iterate through sources list
-            for (Path source : sources) {
-
-                // Add each source to zip with corresponding name in zipFilenames
-                ZipEntry zipEntry = new ZipEntry(zipFilenames.get(srcIndex));
-                zos.putNextEntry(zipEntry);
-
-                // Get all bytes (can overflow heap if contents too large - currently capped at 5MB)
-                byte[] fileContent = Files.readAllBytes(source);
-
-                // Write to output stream
-                zos.write(fileContent, 0, fileContent.length);
-
-                // Maybe better for performance rather than reading whole file at once
-//                try (FileInputStream fis = new FileInputStream(source.toFile())) {
-//                    byte[] buffer = new byte[4096];
-//                    int len;
-//                    while ((len = fis.read(buffer)) > 0) {
-//                        zos.write(buffer, 0, len);
-//                    }
-//                }
-
-                zos.closeEntry();
-                srcIndex ++;
-            }
-        }
-        // Return zip contents in byte[] format
-        return byteArrayOutputStream.toByteArray();
-    }
-
-    /**
-     *  Upload ZIP contents to S3 bucket using multipart upload
-     * @param datasetDir    Directory (String) where dataset is located
-     * @param orderId   Base64 orderId
-     */
-    private void uploadZipContents(String datasetDir, String orderId){
-        try{
-            Path datasetPath = Paths.get(datasetDir);
-
-            // Calculate total number of files in folder
-            long totalFiles = Files.walk(datasetPath)
-                    .parallel()
-                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
-                    .count();
-
-
-            // Hash set to hold unique filenames (cannot have repeats)
-            Set<String> uniqueFilenames = new HashSet<>();
-            List<String> curZipFilenameList = new ArrayList<String>();
-            List<Path> sources = new ArrayList<Path>();
-
-            // Holds part data for multipart upload processing
-            List<Map<String, String>> finalParts = new ArrayList<>();
-
-            long curZipSize = 0; // Current size of zip file
-            short totalParts = 0;
-            short zipIndex = 0; // Index of zip file
-            short filesProcessed = 0; // Total number of processed files (for callback)
-
-            boolean finalFile = false;
-
-            // Iterate through files in dataset
-            try (Stream<Path> stream = Files.walk(datasetPath)) {
-                for (Iterator<Path> it = stream.iterator(); it.hasNext(); ) {
-
-                    Path file = it.next();
-
-                    // Check if file is readible
-                    if(!Files.isReadable(file)) {
-                        throw new RuntimeException("File is not readable.");
-                    }
-
-                    // Flag final file (to capture last files)
-                    if(!it.hasNext()){
-                        finalFile = true;
-                    }
-
-                    // Extract filename
-                    String filename = file.getFileName().toString();
-
-                    // Ensure file is a file and exclude ".DS_Store"
-                    if(Files.isDirectory(file) || filename.equals(".DS_Store")){
-                        continue;
-                    }
-
-                    // Get a unique filename
-                    String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
-
-                    // Add unique filename to list
-                    uniqueFilenames.add(uniqueFilename);
-
-                    curZipFilenameList.add(uniqueFilename);
-
-                    // Add file to soruces to be zipped
-                    sources.add(file);
-
-                    // Get size of file
-                    long fileSize = Files.size(file);
-
-                    // Increment cur zip file size
-                    curZipSize += fileSize;
-
-                    // If current zip file size is larger than the max zip chunk size or final file, enter block
-                    if(curZipSize >= this.zipChunkSize || finalFile){
-
-                        // Start new multipart upload
-                        String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
-
-                        // Zip contents
-                        byte[] baos = this.zipDataset(sources, curZipFilenameList);
-
-                        //NOTE: Part numbers are obsolete if chunk size is same as part size
-
-                        // Upload contents and extract ETag
-                        String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex+1, baos);
-
-                        // Add to final part map
-                        Map<String, String> part = new HashMap<>();
-                        part.put("PartNumber", String.valueOf(zipIndex+1));
-                        part.put("ETag", Etag);
-                        finalParts.add(part);
-
-                        // Complete multipart upload
-                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
-
-                        // Reset for next zip file
-                        zipIndex ++;
-                        curZipSize = 0;
-                        curZipFilenameList.clear();
-                        finalParts.clear();
-                        sources.clear();
-                    }
-
-                    filesProcessed ++;
-
-                    // Callback stuff here ("Processing")
-                }
-            }
-
-        } catch (Exception e) {
-            // Throw error
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     *  Upload ZIP contents to S3 bucket using multipart upload with specified datasetId
-     * @param datasetDir    Directory (String) where dataset is located
-     * @param orderId   Base64 orderId
-     * @param datasetId String to identify dataset (must be unique)
-     */
-    private void uploadZipContents(String datasetDir, String orderId, String datasetId){
-        try{
-            Path datasetPath = Paths.get(datasetDir);
-
-            // Calculate total number of files in folder
-            long totalFiles = Files.walk(datasetPath)
-                    .parallel()
-                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
-                    .count();
-
-
-            // Hash set to hold unique filenames (cannot have repeats)
-            Set<String> uniqueFilenames = new HashSet<>();
-            List<String> curZipFilenameList = new ArrayList<String>();
-            List<Path> sources = new ArrayList<Path>();
-
-            // Holds part data for multipart upload processing
-            List<Map<String, String>> finalParts = new ArrayList<>();
-
-            long curZipSize = 0; // Current size of zip file
-            short totalParts = 0;
-            short zipIndex = 0; // Index of zip file
-            short filesProcessed = 0; // Total number of processed files (for callback)
-
-            boolean finalFile = false;
-
-            // Iterate through files in dataset
-            try (Stream<Path> stream = Files.walk(datasetPath)) {
-                for (Iterator<Path> it = stream.iterator(); it.hasNext(); ) {
-
-                    Path file = it.next();
-
-                    // Check if file is readible
-                    if(!Files.isReadable(file)) {
-                        throw new RuntimeException("File is not readable.");
-                    }
-
-                    // Flag final file (to capture last files)
-                    if(!it.hasNext()){
-                        finalFile = true;
-                    }
-
-                    // Extract filename
-                    String filename = file.getFileName().toString();
-
-                    // Ensure file is a file and exclude ".DS_Store"
-                    if(Files.isDirectory(file) || filename.equals(".DS_Store")){
-                        continue;
-                    }
-
-                    // Get a unique filename
-                    String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
-
-                    // Add unique filename to list
-                    uniqueFilenames.add(uniqueFilename);
-
-                    curZipFilenameList.add(uniqueFilename);
-
-                    // Add file to soruces to be zipped
-                    sources.add(file);
-
-                    // Get size of file
-                    long fileSize = Files.size(file);
-
-                    // Increment cur zip file size
-                    curZipSize += fileSize;
-
-                    // If current zip file size is larger than the max zip chunk size or final file, enter block
-                    if(curZipSize >= this.zipChunkSize || finalFile){
-
-                        // Start new multipart upload
-                        String uploadId = this.newMultipartUpload(datasetId, zipIndex, orderId);
-
-                        // Zip contents
-                        byte[] baos = this.zipDataset(sources, curZipFilenameList);
-
-                        //NOTE: Part numbers are obsolete if chunk size is same as part size
-
-                        // Upload contents and extract ETag
-                        String Etag = this.uploadMultipartChunk(uploadId, datasetId, zipIndex, orderId, zipIndex+1, baos);
-
-                        // Add to final part map
-                        Map<String, String> part = new HashMap<>();
-                        part.put("PartNumber", String.valueOf(zipIndex+1));
-                        part.put("ETag", Etag);
-                        finalParts.add(part);
-
-                        // Complete multipart upload
-                        this.completeMultipartUpload(orderId, datasetId, zipIndex, uploadId, finalParts);
-
-                        // Reset for next zip file
-                        zipIndex ++;
-                        curZipSize = 0;
-                        curZipFilenameList.clear();
-                        finalParts.clear();
-                        sources.clear();
-                    }
-
-                    filesProcessed ++;
-
-                    // Callback stuff here ("Processing")
-                }
-            }
-
-        } catch (Exception e) {
-            // Throw error
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Start a new S3 multipart upload
      * @param datasetId Base64 datasetId (String)
      * @param zipIndex  Index of zip file
      * @param orderId   Base64 orderId (String)
-     * @return  Upload Id correlating upload to S3 object
+     * @return Upload Id correlating upload to S3 object
      */
     private String newMultipartUpload(String datasetId, int zipIndex, String orderId){
         try{
@@ -792,20 +531,151 @@ public class Neuropacs {
     }
 
     /**
-     * Attempt a dataset upload
-     * @param datasetPath String path to dataset to be uploaded
-     * @param orderId Base64 orderId
-     * @param datasetId Base64 datasetId
+     * Use QIDO-RS to retrieve instance URLs
+     * @param dicomWebBaseUrl Base URL of the DICOMweb server
+     * @param studyInstanceUID Unique Study Instance UID of the study to be retrieved.
+     * @param username Username for basic authentication
+     * @param password Password for basic authentication
+     * @return List of instance URIs
      */
-    private void attemptUploadDataset(String datasetPath, String orderId, String datasetId){
-        uploadZipContents(datasetPath, orderId, datasetId);
+    private static List<String> queryInstances(String dicomWebBaseUrl, String studyInstanceUID, String username, String password) throws Exception {
+        List<String> sopInstanceUIDs = new ArrayList<>();
+
+        // Build the URI for the QIDO-RS query
+        String qidoUriStr = dicomWebBaseUrl + "/studies/" + studyInstanceUID + "/instances";
+        URI qidoUri = new URI(qidoUriStr);
+
+        // Create an HTTP client
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Create an HTTP request
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(qidoUri)
+                .header("Accept", "application/dicom+json")
+                .GET();
+
+        // Set basic authentication if needed
+        if (username != null && password != null) {
+            String auth = username + ":" + password;
+            String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
+            requestBuilder.header("Authorization", "Basic " + encodedAuth);
+        }
+
+        HttpRequest request = requestBuilder.build();
+
+        // Send the request and get the response
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+        if (response.statusCode() == 200) {
+
+            // Parse the JSON response using Jackson's ObjectMapper
+            InputStream jsonResponseStream = response.body();
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            List<Map<String, Object>> dicomInstances = objectMapper.readValue(
+                    jsonResponseStream,
+                    new TypeReference<List<Map<String, Object>>>() {}
+            );
+
+            for (Map<String, Object> instance : dicomInstances) {
+                Map<String, Object> sopInstanceMap = (Map<String, Object>) instance.get("00081190");
+                if (sopInstanceMap != null) {
+                    List<String> values = (List<String>) sopInstanceMap.get("Value");
+                    if (values != null && !values.isEmpty()) {
+                        String sopInstanceUID = values.get(0);
+                        sopInstanceUIDs.add(sopInstanceUID);
+                    }
+                }
+            }
+        } else {
+            throw new RuntimeException("Failed to query instances. HTTP error code: " + response.statusCode());
+        }
+
+        return sopInstanceUIDs;
     }
 
+    /**
+     * Use WADO-RS to retrieve the raw data for each instance
+     * @param wadoUriStr URI for the instance
+     * @param username Username for basic authentication
+     * @param password Password for basic authentication
+     * @return Raw content of each the instance
+     */
+    private static byte[] retrieveInstanceBytes(String wadoUriStr, String username, String password) throws Exception {
+        // Build the URI for WADO-RS to retrieve the instance
+        URI wadoUri = new URI(wadoUriStr);
+
+        // Create an HTTP client
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Create an HTTP request
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(wadoUri)
+                .header("Accept", "multipart/related; type=application/dicom") //TODO: FIX THIS (something with mulipart and dicom)
+                .GET();
+
+        // Set basic authentication if needed
+        if (username != null && password != null) {
+            String auth = username + ":" + password;
+            String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
+            requestBuilder.header("Authorization", "Basic " + encodedAuth);
+        }
+
+        HttpRequest request = requestBuilder.build();
+
+        // Send the request and get the response
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+        if (response.statusCode() == 200) {
+            String contentType = response.headers().firstValue("Content-Type").orElse("");
+            String boundary = null;
+
+            // Extract boundary from Content-Type header
+            for (String param : contentType.split(";")) {
+                param = param.trim();
+                if (param.startsWith("boundary=")) {
+                    boundary = param.substring("boundary=".length());
+                    break;
+                }
+            }
+
+            if (boundary == null) {
+                throw new RuntimeException("Boundary not found in Content-Type header");
+            }
+
+            // Create a MimeMultipart object
+            MimeMultipart multipart = new MimeMultipart(new ByteArrayDataSource(response.body(), contentType));
+
+            // Iterate through the parts to find the DICOM part
+            for (int i = 0; i < multipart.getCount(); i++) {
+                BodyPart part = multipart.getBodyPart(i);
+                String partContentType = part.getContentType();
+                if (partContentType.toLowerCase().startsWith("application/dicom")) {
+                    try (InputStream dicomStream = part.getInputStream();
+                         ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+                        byte[] buffer = new byte[8192];
+                        int len;
+                        while ((len = dicomStream.read(buffer)) > 0) {
+                            baos.write(buffer, 0, len);
+                        }
+
+                        return baos.toByteArray();
+                    }
+                }
+            }
+
+            throw new RuntimeException("No application/dicom part found in the multipart response");
+        }else{
+            System.err.println("Error retrieving instance" + ": HTTP error code " + response.statusCode());
+            return null;
+        }
+    }
 
 //    Public methods
 
     /**
-     * Create a connection with neuropacs application
+     * Create a session with neuropacs application
      * @return Connection object (timestamp, connectionId, aesKey)
      */
     public String connect(){
@@ -856,10 +726,14 @@ public class Neuropacs {
 
     /**
      * Create a new neuropacs order
-     * @return Base64 orderId
+     * @return Unique base64 identifier for the order.
      */
     public String newJob(){
         try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+
             // Build URI
             URI uri = URI.create(this.serverUrl + "/api/newJob/");
 
@@ -900,86 +774,636 @@ public class Neuropacs {
         }
     }
 
-//    /**
-//     * Upload a dataset to the neuropacs S3 bucket
-//     * @param datasetPath   Path to dataset (String)
-//     * @param orderId   Base64 orderId
-//     * @param datasetId Base 64 datasetId
-//     * @param callback Progress callback
-//     * @return 0 on success
-//     */
-//    public int uploadDataset(String datasetPath, String orderId, String datasetId, Callable<String> callback) {
-//        try {
-//            // Check if datasetPath exists
-//            Path directoryPath = Paths.get(datasetPath);
-//            if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
-//                throw new RuntimeException("datasetPath does not exist.");
-//            }
-//
-//            return 0;
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("Dataset upload failed: " + e.getMessage(), e);
-//
-//        }
-//    }
-
-
     /**
-     * Upload a dataset to neuropacs S3 bucket (default)
-     * @param datasetPath Path to dataset (String)
-     * @param orderId Base64 orderId
-     * @return 0 on success
+     * Upload a dataset from a file path with callback
+     * @param orderId Unique base64 identifier for the order.
+     * @param datasetPath Path to dataset folder to be uploaded (ex. "/path/to/dicom").
+     * @param callback Callback function invoked with upload progress.
+     * @return Boolean indicating upload status.
      */
-    public int uploadDataset(String datasetPath, String orderId){
-        try {
+    public boolean uploadDatasetFromPath(String orderId, String datasetPath, Consumer<String> callback){
+        try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+
             // Check if datasetPath exists and is a directory
             Path directoryPath = Paths.get(datasetPath);
             if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
                 throw new RuntimeException("datasetPath does not exist.");
             }
 
-            // Attempt upload dataset
-            attemptUploadDataset(datasetPath, orderId, orderId);
-            return 0;
+            // Calculate total number of files in folder
+            long totalFiles = Files.walk(directoryPath)
+                    .parallel()
+                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
+                    .count();
+
+            // Hash set to hold unique filenames (cannot have repeats)
+            Set<String> uniqueFilenames = new HashSet<>();
+
+            int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
+            long curZipSize = 0; // Track current zip size
+
+            // Byte stream to hold zip contents
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            // Create ZipOutputStream wrapping the ByteArrayOutputStream
+            ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream);
+
+            // Collect all files to be processed
+            List<Path> filesList = Files.walk(directoryPath)
+                    .filter(p -> Files.isRegularFile(p) && !p.getFileName().toString().equals(".DS_Store"))
+                    .toList();
+
+            // Iterate through files in dataset
+            for (Path file : filesList) {
+                // Check if file is readable
+                if (!Files.isReadable(file)) {
+                    throw new RuntimeException("File is not readable.");
+                }
+
+                // Get filename
+                String filename = file.getFileName().toString();
+
+                // Get file size
+                long fileSize = Files.size(file);
+
+                // Get a unique filename
+                String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
+
+                // Add unique filename to list
+                uniqueFilenames.add(uniqueFilename);
+
+                // If current zip file size is larger than the max zip chunk size or final file, enter block
+                // OR, if there is no current zip stream (should create a new one)
+                long nextZipSize = curZipSize + fileSize;
+                if (nextZipSize > this.maxZipSize) {
+                    // Close the current ZipOutputStream to finalize the ZIP file
+                    zos.close();
+
+                    // Zip contents
+                    byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                    // Calculate zip index
+                    int zipIndex = partIndex - 1;
+
+                    // Start new multipart upload
+                    String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                    // Upload contents and extract ETag
+                    String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex + 1, zipContents);
+
+                    // Add to final part map
+                    List<Map<String, String>> finalParts = new ArrayList<>();
+                    Map<String, String> part = new HashMap<>();
+                    part.put("PartNumber", String.valueOf(zipIndex + 1));
+                    part.put("ETag", Etag);
+                    finalParts.add(part);
+
+                    // Complete multipart upload
+                    this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+
+                    // Reset the ByteArrayOutputStream
+                    byteArrayOutputStream.reset();
+
+                    // Create a new ZipOutputStream
+                    zos = new ZipOutputStream(byteArrayOutputStream);
+
+                    // Reset current zip file size
+                    curZipSize = 0;
+
+                    // Increment part index
+                    partIndex++;
+                }
+
+                // Add the current file to the zip
+                ZipEntry zipEntry = new ZipEntry(uniqueFilename);
+                zos.putNextEntry(zipEntry);
+                // Read and write file content
+                try (InputStream is = Files.newInputStream(file)) {
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = is.read(buffer)) > 0) {
+                        zos.write(buffer, 0, len);
+                    }
+                }
+                zos.closeEntry();
+
+                // Increment cur zip file size
+                curZipSize += fileSize;
+
+                // Increment files uploaded
+                filesUploaded++;
+
+                // Invoke callback
+                float callbackStatus = ((float) filesUploaded/ (float) totalFiles)*100;
+                String callbackStatusStr = String.format("%.2f", callbackStatus);
+                if(callbackStatusStr.equals("100.00")){
+                    callbackStatusStr = "100";
+                }
+                callback.accept("{orderId: " + orderId + ", progress: " + callbackStatusStr + ", status: " + "Uploading file " + filesUploaded + "/" + totalFiles + "}");
+            }
+
+            // Include remaining files (if existing open zip stream)
+            if(curZipSize > 0){
+                // Close the ZipOutputStream to finalize the ZIP file
+                zos.close();
+
+                // Get zip contents
+                byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                // Calculate zip index
+                int zipIndex = partIndex - 1;
+
+                // Start new multipart upload
+                String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                // Upload contents and extract ETag
+                String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex+1, zipContents);
+
+                // Add to final part map
+                List<Map<String, String>> finalParts = new ArrayList<>();
+                Map<String, String> part = new HashMap<>();
+                part.put("PartNumber", String.valueOf(zipIndex+1));
+                part.put("ETag", Etag);
+                finalParts.add(part);
+
+                // Complete multipart upload
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+            }else{
+                // Close the ZipOutputStream if it's not already closed
+                zos.close();
+            }
+
+            // Close the ByteArrayOutputStream
+            byteArrayOutputStream.close();
+
+            return true;
         } catch (Exception e) {
             // Throw error
-            throw new RuntimeException("Dataset upload failed: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to upload dataset from path: " + e.getMessage(), e);
         }
     }
 
+
     /**
-     * Upload a dataset to neuropacs S3 bucket (specify datasetId)
-     * @param datasetPath Path to dataset (String)
-     * @param orderId Base64 orderId
-     * @param datasetId Base64 datasetId
-     * @return 0 on success
+     * Upload a dataset from a file path
+     * @param orderId Unique base64 identifier for the order.
+     * @param datasetPath Path to dataset folder to be uploaded (ex. "/path/to/dicom").
+     * @return Boolean indicating upload status.
      */
-    public int uploadDataset(String datasetPath, String orderId, String datasetId){
-        try {
+    public boolean uploadDatasetFromPath(String orderId, String datasetPath){
+        try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+
             // Check if datasetPath exists and is a directory
             Path directoryPath = Paths.get(datasetPath);
             if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
                 throw new RuntimeException("datasetPath does not exist.");
             }
 
-            // Attempt upload dataset
-            attemptUploadDataset(datasetPath, orderId, datasetId);
-            return 0;
+            // Calculate total number of files in folder
+            long totalFiles = Files.walk(directoryPath)
+                    .parallel()
+                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
+                    .count();
+
+            // Hash set to hold unique filenames (cannot have repeats)
+            Set<String> uniqueFilenames = new HashSet<>();
+
+            int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
+            long curZipSize = 0; // Track current zip size
+
+            // Byte stream to hold zip contents
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            // Create ZipOutputStream wrapping the ByteArrayOutputStream
+            ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream);
+
+            // Collect all files to be processed
+            List<Path> filesList = Files.walk(directoryPath)
+                    .filter(p -> Files.isRegularFile(p) && !p.getFileName().toString().equals(".DS_Store"))
+                    .toList();
+
+            // Iterate through files in dataset
+            for (Path file : filesList) {
+                // Check if file is readable
+                if (!Files.isReadable(file)) {
+                    throw new RuntimeException("File is not readable.");
+                }
+
+                // Get filename
+                String filename = file.getFileName().toString();
+
+                // Get file size
+                long fileSize = Files.size(file);
+
+                // Get a unique filename
+                String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
+
+                // Add unique filename to list
+                uniqueFilenames.add(uniqueFilename);
+
+                // If current zip file size is larger than the max zip chunk size or final file, enter block
+                // OR, if there is no current zip stream (should create a new one)
+                long nextZipSize = curZipSize + fileSize;
+                if (nextZipSize > this.maxZipSize) {
+                    // Close the current ZipOutputStream to finalize the ZIP file
+                    zos.close();
+
+                    // Zip contents
+                    byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                    // Calculate zip index
+                    int zipIndex = partIndex - 1;
+
+                    // Start new multipart upload
+                    String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                    // Upload contents and extract ETag
+                    String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex + 1, zipContents);
+
+                    // Add to final part map
+                    List<Map<String, String>> finalParts = new ArrayList<>();
+                    Map<String, String> part = new HashMap<>();
+                    part.put("PartNumber", String.valueOf(zipIndex + 1));
+                    part.put("ETag", Etag);
+                    finalParts.add(part);
+
+                    // Complete multipart upload
+                    this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+
+                    // Reset the ByteArrayOutputStream
+                    byteArrayOutputStream.reset();
+
+                    // Create a new ZipOutputStream
+                    zos = new ZipOutputStream(byteArrayOutputStream);
+
+                    // Reset current zip file size
+                    curZipSize = 0;
+
+                    // Increment part index
+                    partIndex++;
+                }
+
+                // Add the current file to the zip
+                ZipEntry zipEntry = new ZipEntry(uniqueFilename);
+                zos.putNextEntry(zipEntry);
+                // Read and write file content
+                try (InputStream is = Files.newInputStream(file)) {
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = is.read(buffer)) > 0) {
+                        zos.write(buffer, 0, len);
+                    }
+                }
+                zos.closeEntry();
+
+                // Increment cur zip file size
+                curZipSize += fileSize;
+
+                // Increment files uploaded
+                filesUploaded++;
+            }
+
+            // Include remaining files (if existing open zip stream)
+            if(curZipSize > 0){
+                // Close the ZipOutputStream to finalize the ZIP file
+                zos.close();
+
+                // Get zip contents
+                byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                // Calculate zip index
+                int zipIndex = partIndex - 1;
+
+                // Start new multipart upload
+                String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                // Upload contents and extract ETag
+                String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex+1, zipContents);
+
+                // Add to final part map
+                List<Map<String, String>> finalParts = new ArrayList<>();
+                Map<String, String> part = new HashMap<>();
+                part.put("PartNumber", String.valueOf(zipIndex+1));
+                part.put("ETag", Etag);
+                finalParts.add(part);
+
+                // Complete multipart upload
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+            }else{
+                // Close the ZipOutputStream if it's not already closed
+                zos.close();
+            }
+
+            // Close the ByteArrayOutputStream
+            byteArrayOutputStream.close();
+
+            return true;
         } catch (Exception e) {
             // Throw error
-            throw new RuntimeException("Dataset upload failed: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to upload dataset from path: " + e.getMessage(), e);
         }
     }
+
+
+    /**
+     * Upload a dataset from DICOMweb with callback
+     * @param orderId Unique base64 identifier for the order.
+     * @param dicomWebBaseUrl Base URL of the DICOMweb server (e.g., 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
+     * @param studyUid Unique Study Instance UID of the study to be retrieved.
+     * @param username Username for basic authentication (use 'null' if not required)
+     * @param password Password for basic authentication (use 'null' if not required)
+     * @param callback Callback function invoked with upload progress.
+     * @return Boolean indicating upload status.
+     */
+    public boolean uploadDatasetFromDicomWeb(String orderId, String dicomWebBaseUrl, String studyUid, String username, String password, Consumer<String> callback){
+        try {
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+            // Use QIDO-RS to get list of SOP Instance UIDs
+            List<String> sopInstanceURIs = queryInstances(dicomWebBaseUrl, studyUid, username, password);
+
+            int totalFiles = sopInstanceURIs.size();
+
+            int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
+            long curZipSize = 0; // Track current zip size
+
+            // Byte stream to hold zip contents
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            // Create ZipOutputStream wrapping the ByteArrayOutputStream
+            ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream);
+
+            // Use WADO-RS to retrieve each instance and get bytes
+            for (String sopInstanceURI : sopInstanceURIs) {
+                byte[] instanceBytes = retrieveInstanceBytes(sopInstanceURI, username, password);
+                if (instanceBytes != null) {
+                    // Get filename
+                    String filename = this.generateUniqueUUID();
+
+                    // Get file size
+                    long fileSize = instanceBytes.length;
+
+                    // If current zip file size is larger than the max zip chunk size or final file, enter block
+                    // OR, if there is no current zip stream (should create a new one)
+                    long nextZipSize = curZipSize + fileSize;
+                    if (nextZipSize > this.maxZipSize) {
+                        // Close the current ZipOutputStream to finalize the ZIP file
+                        zos.close();
+
+                        // Zip contents
+                        byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                        // Calculate zip index
+                        int zipIndex = partIndex - 1;
+
+                        // Start new multipart upload
+                        String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                        // Upload contents and extract ETag
+                        String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex + 1, zipContents);
+
+                        // Add to final part map
+                        List<Map<String, String>> finalParts = new ArrayList<>();
+                        Map<String, String> part = new HashMap<>();
+                        part.put("PartNumber", String.valueOf(zipIndex + 1));
+                        part.put("ETag", Etag);
+                        finalParts.add(part);
+
+                        // Complete multipart upload
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+
+                        // Reset the ByteArrayOutputStream
+                        byteArrayOutputStream.reset();
+
+                        // Create a new ZipOutputStream
+                        zos = new ZipOutputStream(byteArrayOutputStream);
+
+                        // Reset current zip file size
+                        curZipSize = 0;
+
+                        // Increment part index
+                        partIndex++;
+                    }
+
+                    // Add the current file to the zip
+                    ZipEntry zipEntry = new ZipEntry(filename);
+                    zos.putNextEntry(zipEntry);
+
+                    zos.write(instanceBytes);
+
+                    zos.closeEntry();
+
+                    // Increment cur zip file size
+                    curZipSize += fileSize;
+
+                    // Increment files uploaded
+                    filesUploaded++;
+
+                    // Invoke callback
+                    float callbackStatus = ((float) filesUploaded/ (float) totalFiles)*100;
+                    String callbackStatusStr = String.format("%.2f", callbackStatus);
+                    if(callbackStatusStr.equals("100.00")){
+                        callbackStatusStr = "100";
+                    }
+                    callback.accept("{orderId: " + orderId + ", progress: " + callbackStatusStr + ", status: " + "Uploading file " + filesUploaded + "/" + totalFiles + "}");
+                }
+            }
+
+            // Include remaining files (if existing open zip stream)
+            if(curZipSize > 0){
+                // Close the ZipOutputStream to finalize the ZIP file
+                zos.close();
+
+                // Get zip contents
+                byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                // Calculate zip index
+                int zipIndex = partIndex - 1;
+
+                // Start new multipart upload
+                String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                // Upload contents and extract ETag
+                String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex+1, zipContents);
+
+                // Add to final part map
+                List<Map<String, String>> finalParts = new ArrayList<>();
+                Map<String, String> part = new HashMap<>();
+                part.put("PartNumber", String.valueOf(zipIndex+1));
+                part.put("ETag", Etag);
+                finalParts.add(part);
+
+                // Complete multipart upload
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+            }else{
+                // Close the ZipOutputStream if it's not already closed
+                zos.close();
+            }
+            // Close the ByteArrayOutputStream
+            byteArrayOutputStream.close();
+
+            return true;
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("Failed to upload dataset from path: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Upload a dataset from DICOMweb
+     * @param orderId Unique base64 identifier for the order.
+     * @param dicomWebBaseUrl Base URL of the DICOMweb server (e.g., 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
+     * @param studyUid Unique Study Instance UID of the study to be retrieved.
+     * @param username Username for basic authentication (use 'null' if not required)
+     * @param password Password for basic authentication (use 'null' if not required)
+     * @return Boolean indicating upload status.
+     */
+    public boolean uploadDatasetFromDicomWeb(String orderId, String dicomWebBaseUrl, String studyUid, String username, String password){
+        try {
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+            // Use QIDO-RS to get list of SOP Instance UIDs
+            List<String> sopInstanceURIs = queryInstances(dicomWebBaseUrl, studyUid, username, password);
+
+            int totalFiles = sopInstanceURIs.size();
+
+            int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
+            long curZipSize = 0; // Track current zip size
+
+            // Byte stream to hold zip contents
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            // Create ZipOutputStream wrapping the ByteArrayOutputStream
+            ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream);
+
+            // Use WADO-RS to retrieve each instance and get bytes
+            for (String sopInstanceURI : sopInstanceURIs) {
+                byte[] instanceBytes = retrieveInstanceBytes(sopInstanceURI, username, password);
+                if (instanceBytes != null) {
+                    // Get filename
+                    String filename = this.generateUniqueUUID();
+
+                    // Get file size
+                    long fileSize = instanceBytes.length;
+
+                    // If current zip file size is larger than the max zip chunk size or final file, enter block
+                    // OR, if there is no current zip stream (should create a new one)
+                    long nextZipSize = curZipSize + fileSize;
+                    if (nextZipSize > this.maxZipSize) {
+                        // Close the current ZipOutputStream to finalize the ZIP file
+                        zos.close();
+
+                        // Zip contents
+                        byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                        // Calculate zip index
+                        int zipIndex = partIndex - 1;
+
+                        // Start new multipart upload
+                        String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                        // Upload contents and extract ETag
+                        String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex + 1, zipContents);
+
+                        // Add to final part map
+                        List<Map<String, String>> finalParts = new ArrayList<>();
+                        Map<String, String> part = new HashMap<>();
+                        part.put("PartNumber", String.valueOf(zipIndex + 1));
+                        part.put("ETag", Etag);
+                        finalParts.add(part);
+
+                        // Complete multipart upload
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+
+                        // Reset the ByteArrayOutputStream
+                        byteArrayOutputStream.reset();
+
+                        // Create a new ZipOutputStream
+                        zos = new ZipOutputStream(byteArrayOutputStream);
+
+                        // Reset current zip file size
+                        curZipSize = 0;
+
+                        // Increment part index
+                        partIndex++;
+                    }
+
+                    // Add the current file to the zip
+                    ZipEntry zipEntry = new ZipEntry(filename);
+                    zos.putNextEntry(zipEntry);
+
+                    zos.write(instanceBytes);
+
+                    zos.closeEntry();
+
+                    // Increment cur zip file size
+                    curZipSize += fileSize;
+
+                    // Increment files uploaded
+                    filesUploaded++;
+                }
+            }
+
+            // Include remaining files (if existing open zip stream)
+            if(curZipSize > 0){
+                // Close the ZipOutputStream to finalize the ZIP file
+                zos.close();
+
+                // Get zip contents
+                byte[] zipContents = byteArrayOutputStream.toByteArray();
+
+                // Calculate zip index
+                int zipIndex = partIndex - 1;
+
+                // Start new multipart upload
+                String uploadId = this.newMultipartUpload(orderId, zipIndex, orderId);
+
+                // Upload contents and extract ETag
+                String Etag = this.uploadMultipartChunk(uploadId, orderId, zipIndex, orderId, zipIndex+1, zipContents);
+
+                // Add to final part map
+                List<Map<String, String>> finalParts = new ArrayList<>();
+                Map<String, String> part = new HashMap<>();
+                part.put("PartNumber", String.valueOf(zipIndex+1));
+                part.put("ETag", Etag);
+                finalParts.add(part);
+
+                // Complete multipart upload
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+            }else{
+                // Close the ZipOutputStream if it's not already closed
+                zos.close();
+            }
+            // Close the ByteArrayOutputStream
+            byteArrayOutputStream.close();
+
+            return true;
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("Failed to upload dataset from path: " + e.getMessage(), e);
+        }
+    }
+
 
     /**
      * Run an order
+     * @param orderId Unique base64 identifier for the order.
      * @param productName Name of product to be executed
-     * @param orderId Base64 orderId
      * @return Response code of request
      */
-    public int runJob(String productName, String orderId){
+    public int runJob(String orderId, String productName){
         try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
             // Build URI
             URI uri = URI.create(this.serverUrl + "/api/runJob/");
 
@@ -1019,12 +1443,15 @@ public class Neuropacs {
     }
 
     /**
-     * Check status of existing neuropacs order
-     * @param orderId Base64 orderId
-     * @return  Status string
+     * Check job status for a specified order
+     * @param orderId Unique base64 identifier for the order.
+     * @return Job status message in JSON.
      */
     public String checkStatus(String orderId){
         try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
             // Build URI
             URI uri = URI.create(this.serverUrl + "/api/checkStatus/");
 
@@ -1066,13 +1493,16 @@ public class Neuropacs {
     }
 
     /**
-     *  Get results for existing neuropacs order
-     * @param format    Format of results to be returned ('txt', 'json', 'xml')
-     * @param orderId   Base64 orderId
+     * Get job results for a specified order in a specified format
+     * @param orderId Unique base64 identifier for the order.
+     * @param format Format of file data ('txt'/'xml'/'json'/'png')
      * @return  Result string in specified format
      */
-    public String getResults(String format, String orderId){
+    public String getResults(String orderId, String format){
         try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
             // Build URI
             URI uri = URI.create(this.serverUrl + "/api/getResults/");
 
@@ -1129,6 +1559,9 @@ public class Neuropacs {
      */
     public byte[] getResultsPng(String orderId){
         try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
             // Build URI
             URI uri = URI.create(this.serverUrl + "/api/getResults/");
 
