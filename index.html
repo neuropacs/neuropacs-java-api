@@ -140,9 +140,11 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
   <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
 
   <span class="code-comment">// Upload a dataset from path</span>
-  <span class="code-keyword">boolean</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, 
-  <span class="code-string">"/path/to/dataset"</span>, 
-  System.out::println); <span class="code-comment">// optional progress callback</span>
+  <span class="code-keyword">boolean</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(
+    orderId, 
+    <span class="code-string">"/path/to/dataset"</span>, 
+    System.out::println <span class="code-comment">// optional progress callback</span>
+  );
 
   <span class="code-comment">// Start an order</span>
   <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
@@ -198,14 +200,14 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
   <span class="code-keyword">String</span> password = <span class="code-string">"password"</span>; <span class="code-comment">// If not required, use null</span>
 
   <span class="code-comment">// Upload a dataset from DICOMweb</span>
-  <span class="code-keyword">boolean</span> upload = <span class="code-keyword">await</span> npcs.<span class="code-function">uploadDatasetFromDicomWeb</span>({
-      orderId,
-      dicomWebBaseUrl,
-      studyUid,
-      username,  
-      password, 
-      System.out::println <span class="code-comment">// optional progress callback</span>
-    });
+  <span class="code-keyword">boolean</span> upload = <span class="code-keyword">await</span> npcs.<span class="code-function">uploadDatasetFromDicomWeb</span>(
+    orderId,
+    dicomWebBaseUrl,
+    studyUid,
+    username,  
+    password, 
+    System.out::println <span class="code-comment">// optional progress callback</span>
+  );
         </code></pre>
           </div>
         </section>
