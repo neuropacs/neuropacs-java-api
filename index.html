@@ -141,7 +141,7 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
 
   <span class="code-comment">// Upload a dataset from path</span>
   <span class="code-keyword">boolean</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, 
-  "/path/to/dataset", 
+  <span class="code-string">"/path/to/dataset"</span>, 
   System.out::println); <span class="code-comment">// optional progress callback</span>
 
   <span class="code-comment">// Start an order</span>
