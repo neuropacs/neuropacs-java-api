@@ -300,3 +300,7 @@ body {
 .image-row a img:hover {
   transform: scale(1.1);
 }
+
+.code-section {
+  margin-top: 30px;
+}

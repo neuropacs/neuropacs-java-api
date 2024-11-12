@@ -34,6 +34,7 @@
         <li><a href="https://neuropacs.github.io/">Home</a></li>
         <li><a href="#installation">Installation</a></li>
         <li><a href="#usage">Usage</a></li>
+        <li><a href="#dicom-web">DICOMweb</a></li>
         <li><a href="#contact">Contact</a></li>
         <li><a href="#license">License</a></li>
         <li><a href="#explore">Explore</a></li>
@@ -110,64 +111,102 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
 
       <section id="usage">
         <h2>Usage</h2>
-        <h3>Initialization</h3>
-        <pre class="code-container"><code class="language-java">
-    <span class="code-keyword">import com.neuropacs.Neuropacs</span>
+        <div class="code-section">
+          <h3>Initialization</h3>
+          <p>Initialize the neuropacs™ API.</p>
+          <pre class="code-container"><code class="language-java">
+  <span class="code-keyword">import com.neuropacs.Neuropacs</span>
 
-    <span class="code-comment">// Define neuropacs parameters</span>
-    <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key";</span> <span class="code-comment">// API key</span>
-    <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url";</span> <span class="code-comment">// neuropacs™ serverl URL</span>
-    <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0";</span> <span class="code-comment">// Desired neuropacs™ product</span>
-    <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON";</span> <span class="code-comment">// Output format of results</span>
-    <span class="code-keyword">String</span> originType = <span class="code-string">"my_application";</span> <span class="code-comment">// Requestor origin</span>
+  <span class="code-comment">// Define neuropacs parameters</span>
+  <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key";</span> <span class="code-comment">// API key</span>
+  <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url";</span> <span class="code-comment">// neuropacs™ serverl URL</span>
+  <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0";</span> <span class="code-comment">// Desired neuropacs™ product</span>
+  <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON";</span> <span class="code-comment">// Output format of results</span>
+  <span class="code-keyword">String</span> originType = <span class="code-string">"my_application";</span> <span class="code-comment">// Requestor origin</span>
 
-    <span class="code-comment">// Initialize the API</span>
-    <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
+  <span class="code-comment">// Initialize the API</span>
+  <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
+          </code></pre>
+        </div>
+
+        <div class="code-section">
+          <h3>Example</h3>
+          <p>Working example using the neuropacs™ API.</p>
+          <pre class="code-container"><code class="language-java">
+  <span class="code-comment">// Create a session</span>
+  <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
+
+  <span class="code-comment">// Create a new order</span>
+  <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
+
+  <span class="code-comment">// Upload a dataset from path</span>
+  <span class="code-keyword">boolean</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, "/path/to/dataset", System.out::println);
+
+  <span class="code-comment">// Start an order</span>
+  <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
+
+  <span class="code-comment">// Check order status</span>
+  <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
+
+  <span class="code-comment">// Retrieve job results</span>
+  <span class="code-keyword">String</span> results = npcs.<span class="code-function">getResults</span>(orderId, predictionFormat);
+
+  <span class="code-comment">// Retrieve job results in PNG</span>
+  <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
+  </code></pre>
+        </div>
+
+        <div class="code-section">
+          <h3>Example viewing a PNG result</h3>
+          <p>Download a PNG result file and view it.</p>
+          <pre class="code-container"><code class="language-java">
+  <span class="code-comment">// Import required packages</span>
+  <span class="code-keyword">import</span> javax.imageio.ImageIO;
+  <span class="code-keyword">import</span> java.awt.image.BufferedImage;
+  <span class="code-keyword">import</span> java.io.ByteArrayInpudtStream;
+  <span class="code-keyword">import</span> java.io.File;
+
+  <span class="code-comment">// Retrieve job results in PNG</span>
+  <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
+
+  <span class="code-comment">// Convert byte[] to an InputStream</span>
+  <span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(resultsPng);
+
+  <span class="code-comment">// Read the input stream into a BufferedImage</span>
+  <span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
+
+  <span class="code-comment">// Save the image to a file</span>
+  <span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
+  </code></pre>
+        </div>
+
+        <section id="dicom-web">
+          <div class="code-section">
+            <h3>DICOMweb Integration</h3>
+            <p>
+              The API retrieves and processes images directly from
+              DICOMweb-compliant servers, enabling neuropacs™ analysis for
+              streamlined diagnostic workflows.
+            </p>
+            <pre class="code-container"><code class="language-python">
+  <span class="code-comment">// Define DICOMweb parameters</span>
+  <span class="code-keyword">String</span> dicomWebBaseUrl = <span class="code-string">"http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs"</span>
+  <span class="code-keyword">String</span> studyUid = <span class="code-string">"1.3.12.2.1107.5.2.32.35162.30000022041820573832300000043"</span>
+  <span class="code-keyword">String</span> username = <span class="code-string">"username"</span> <span class="code-comment">// If not required, use null</span>
+  <span class="code-keyword">String</span> password = <span class="code-string">"password"</span> <span class="code-comment">// If not required, use null</span>
+
+  <span class="code-comment">// Upload a dataset from DICOMweb</span>
+  <span class="code-keyword">boolean</span> upload = <span class="code-keyword">await</span> npcs.<span class="code-function">uploadDatasetFromDicomWeb</span>({
+      orderId,
+      dicomWebBaseUrl,
+      studyUid,
+      username,  
+      password, 
+      System.out::println
+    });
         </code></pre>
-        <h3>Example</h3>
-        <pre class="code-container"><code class="language-java">
-    <span class="code-comment">// Create a session</span>
-    <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
-
-    <span class="code-comment">// Create a new order</span>
-    <span class="code-keyword">String</span> conn = npcs.<span class="code-function">newJob();</span>
-
-    <span class="code-comment">// Upload a dataset from path</span>
-    <span class="code-keyword">int</span> upload = npcs.<span class="code-function">uploadDatasetFromPath</span>(orderId, "/path/to/dataset", System.out::println);
-
-    <span class="code-comment">// Start an order</span>
-    <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
-
-    <span class="code-comment">// Check order status</span>
-    <span class="code-keyword">String</span> status = npcs.<span class="code-function">checkStatus</span>(orderId);
-
-    <span class="code-comment">// Retrieve job results</span>
-    <span class="code-keyword">String</span> results = npcs.<span class="code-function">getResults</span>(orderId, predictionFormat);
-
-    <span class="code-comment">// Retrieve job results in PNG</span>
-    <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
-    </code></pre>
-        <h3>Example viewing a PNG result</h3>
-        <pre class="code-container"><code class="language-java">
-    <span class="code-comment">// Import required packages</span>
-    <span class="code-keyword">import</span> javax.imageio.ImageIO;
-    <span class="code-keyword">import</span> java.awt.image.BufferedImage;
-    <span class="code-keyword">import</span> java.io.ByteArrayInpudtStream;
-    <span class="code-keyword">import</span> java.io.File;
-
-    <span class="code-comment">// Retrieve job results in PNG</span>
-    <span class="code-keyword">byte[]</span> resultsPng = npcs.<span class="code-function">getResultsPng</span>(orderId);
-
-    <span class="code-comment">// Convert byte[] to an InputStream</span>
-    <span class="code-keyword">ByteArrayInputStream</span> bais = <span class="code-keyword">new</span> <span class="code-keyword">ByteArrayInputStream</span>(resultsPng);
-
-    <span class="code-comment">// Read the input stream into a BufferedImage</span>
-    <span class="code-keyword">BufferedImage</span> image = <span class="code-keyword">ImageIO</span>.<span class="code-function">read</span>(bais);
-
-    <span class="code-comment">// Save the image to a file</span>
-    <span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
-
-</code></pre>
+          </div>
+        </section>
       </section>
 
       <section id="contact">
@@ -201,6 +240,9 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
         <ul class="integration-list">
           <li>
             <a href="https://neuropacs.github.io/SlicerNeuropacs/">3D Slicer</a>
+          </li>
+          <li>
+            <a href="#dicom-web">DICOMweb</a>
           </li>
           <!-- <li><a href="weasis.html">Weasis DICOM Viewer</a></li> -->
         </ul>
