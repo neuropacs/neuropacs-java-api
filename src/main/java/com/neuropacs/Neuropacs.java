@@ -804,7 +804,6 @@ public class Neuropacs {
 
             int partIndex = 1; // Counts index of zip file
             int filesUploaded = 0; // Track number of files uploaded
-            long curZipSize = 0; // Track current zip size
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -826,23 +825,20 @@ public class Neuropacs {
                 // Get filename
                 String filename = file.getFileName().toString();
 
-                // Get file size
-                long fileSize = Files.size(file);
-
                 // Get a unique filename
                 String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
 
                 // Add unique filename to list
                 uniqueFilenames.add(uniqueFilename);
 
-                // If current zip file size is larger than the max zip chunk size or final file, enter block
-                // OR, if there is no current zip stream (should create a new one)
-                long nextZipSize = curZipSize + fileSize;
-                if (nextZipSize > this.maxZipSize) {
+                // If zip size is larger than max allowed, process
+                int curZipSize = byteArrayOutputStream.toByteArray().length;
+
+                if (curZipSize > this.maxZipSize) {
                     // Close the current ZipOutputStream to finalize the ZIP file
                     zos.close();
 
-                    // Zip contents
+                    // Get contents of the zip file
                     byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                     // Calculate zip index
@@ -870,9 +866,6 @@ public class Neuropacs {
                     // Create a new ZipOutputStream
                     zos = new ZipOutputStream(byteArrayOutputStream);
 
-                    // Reset current zip file size
-                    curZipSize = 0;
-
                     // Increment part index
                     partIndex++;
                 }
@@ -890,9 +883,6 @@ public class Neuropacs {
                 }
                 zos.closeEntry();
 
-                // Increment cur zip file size
-                curZipSize += fileSize;
-
                 // Increment files uploaded
                 filesUploaded++;
 
@@ -906,11 +896,12 @@ public class Neuropacs {
             }
 
             // Include remaining files (if existing open zip stream)
+            int curZipSize = byteArrayOutputStream.toByteArray().length;
             if(curZipSize > 0){
                 // Close the ZipOutputStream to finalize the ZIP file
                 zos.close();
 
-                // Get zip contents
+                // Get current zip contents
                 byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                 // Calculate zip index
@@ -965,18 +956,10 @@ public class Neuropacs {
                 throw new RuntimeException("datasetPath does not exist.");
             }
 
-            // Calculate total number of files in folder
-            long totalFiles = Files.walk(directoryPath)
-                    .parallel()
-                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
-                    .count();
-
             // Hash set to hold unique filenames (cannot have repeats)
             Set<String> uniqueFilenames = new HashSet<>();
 
             int partIndex = 1; // Counts index of zip file
-            int filesUploaded = 0; // Track number of files uploaded
-            long curZipSize = 0; // Track current zip size
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -998,23 +981,19 @@ public class Neuropacs {
                 // Get filename
                 String filename = file.getFileName().toString();
 
-                // Get file size
-                long fileSize = Files.size(file);
-
                 // Get a unique filename
                 String uniqueFilename = this.ensureUniqueFilename(uniqueFilenames, filename);
 
                 // Add unique filename to list
                 uniqueFilenames.add(uniqueFilename);
 
-                // If current zip file size is larger than the max zip chunk size or final file, enter block
-                // OR, if there is no current zip stream (should create a new one)
-                long nextZipSize = curZipSize + fileSize;
-                if (nextZipSize > this.maxZipSize) {
+                // If zip size is larger than max allowed, process
+                int curZipSize = byteArrayOutputStream.toByteArray().length;
+                if (curZipSize > this.maxZipSize) {
                     // Close the current ZipOutputStream to finalize the ZIP file
                     zos.close();
 
-                    // Zip contents
+                    // Get the current zip contents
                     byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                     // Calculate zip index
@@ -1042,9 +1021,6 @@ public class Neuropacs {
                     // Create a new ZipOutputStream
                     zos = new ZipOutputStream(byteArrayOutputStream);
 
-                    // Reset current zip file size
-                    curZipSize = 0;
-
                     // Increment part index
                     partIndex++;
                 }
@@ -1061,20 +1037,15 @@ public class Neuropacs {
                     }
                 }
                 zos.closeEntry();
-
-                // Increment cur zip file size
-                curZipSize += fileSize;
-
-                // Increment files uploaded
-                filesUploaded++;
             }
 
             // Include remaining files (if existing open zip stream)
+            int curZipSize = byteArrayOutputStream.toByteArray().length;
             if(curZipSize > 0){
                 // Close the ZipOutputStream to finalize the ZIP file
                 zos.close();
 
-                // Get zip contents
+                // Get current zip contents
                 byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                 // Calculate zip index
@@ -1133,7 +1104,6 @@ public class Neuropacs {
 
             int partIndex = 1; // Counts index of zip file
             int filesUploaded = 0; // Track number of files uploaded
-            long curZipSize = 0; // Track current zip size
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1147,17 +1117,13 @@ public class Neuropacs {
                     // Get filename
                     String filename = this.generateUniqueUUID();
 
-                    // Get file size
-                    long fileSize = instanceBytes.length;
-
-                    // If current zip file size is larger than the max zip chunk size or final file, enter block
-                    // OR, if there is no current zip stream (should create a new one)
-                    long nextZipSize = curZipSize + fileSize;
-                    if (nextZipSize > this.maxZipSize) {
+                    // If zip size is larger than max allowed, process
+                    int curZipSize = byteArrayOutputStream.toByteArray().length;
+                    if (curZipSize > this.maxZipSize) {
                         // Close the current ZipOutputStream to finalize the ZIP file
                         zos.close();
 
-                        // Zip contents
+                        // Get current zip contents
                         byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                         // Calculate zip index
@@ -1185,9 +1151,6 @@ public class Neuropacs {
                         // Create a new ZipOutputStream
                         zos = new ZipOutputStream(byteArrayOutputStream);
 
-                        // Reset current zip file size
-                        curZipSize = 0;
-
                         // Increment part index
                         partIndex++;
                     }
@@ -1199,9 +1162,6 @@ public class Neuropacs {
                     zos.write(instanceBytes);
 
                     zos.closeEntry();
-
-                    // Increment cur zip file size
-                    curZipSize += fileSize;
 
                     // Increment files uploaded
                     filesUploaded++;
@@ -1217,11 +1177,12 @@ public class Neuropacs {
             }
 
             // Include remaining files (if existing open zip stream)
+            int curZipSize = byteArrayOutputStream.toByteArray().length;
             if(curZipSize > 0){
                 // Close the ZipOutputStream to finalize the ZIP file
                 zos.close();
 
-                // Get zip contents
+                // Get current zip contents
                 byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                 // Calculate zip index
@@ -1276,8 +1237,6 @@ public class Neuropacs {
             int totalFiles = sopInstanceURIs.size();
 
             int partIndex = 1; // Counts index of zip file
-            int filesUploaded = 0; // Track number of files uploaded
-            long curZipSize = 0; // Track current zip size
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1291,17 +1250,13 @@ public class Neuropacs {
                     // Get filename
                     String filename = this.generateUniqueUUID();
 
-                    // Get file size
-                    long fileSize = instanceBytes.length;
-
-                    // If current zip file size is larger than the max zip chunk size or final file, enter block
-                    // OR, if there is no current zip stream (should create a new one)
-                    long nextZipSize = curZipSize + fileSize;
-                    if (nextZipSize > this.maxZipSize) {
+                    // If zip size is larger than max allowed, process
+                    int curZipSize = byteArrayOutputStream.toByteArray().length;
+                    if (curZipSize > this.maxZipSize) {
                         // Close the current ZipOutputStream to finalize the ZIP file
                         zos.close();
 
-                        // Zip contents
+                        // Get current zip contents
                         byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                         // Calculate zip index
@@ -1329,9 +1284,6 @@ public class Neuropacs {
                         // Create a new ZipOutputStream
                         zos = new ZipOutputStream(byteArrayOutputStream);
 
-                        // Reset current zip file size
-                        curZipSize = 0;
-
                         // Increment part index
                         partIndex++;
                     }
@@ -1344,20 +1296,16 @@ public class Neuropacs {
 
                     zos.closeEntry();
 
-                    // Increment cur zip file size
-                    curZipSize += fileSize;
-
-                    // Increment files uploaded
-                    filesUploaded++;
                 }
             }
 
             // Include remaining files (if existing open zip stream)
+            int curZipSize = byteArrayOutputStream.toByteArray().length;
             if(curZipSize > 0){
                 // Close the ZipOutputStream to finalize the ZIP file
                 zos.close();
 
-                // Get zip contents
+                // Get current zip contents
                 byte[] zipContents = byteArrayOutputStream.toByteArray();
 
                 // Calculate zip index
