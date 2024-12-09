@@ -55,7 +55,7 @@ Initialization
     Neuropacs npcs = new Neuropacs(serverUrl, apiKey, originType);
 ```
 
-Exmaple
+Example
 
 ```java
     // Create a session
@@ -102,6 +102,26 @@ Example viewing a PNG result
     ImageIO.write(image, "png", new File("neuropacs_report.png"));
 ```
 
+### DICOMweb WADO-RS Integration
+The API retrieves and processes images directly from DICOMweb-compliant servers, enabling neuropacs™ analysis for streamlined diagnostic workflows.
+```java
+  // Define DICOMweb parameters
+  String wadoUrl = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
+  String studyUid = "1.3.12.2.1107.5.2.32.35162.30000022041820573832300000043";
+  String username = "username"; // If not required, use null
+  String password = "password"; // If not required, use null
+
+  // Upload a dataset from DICOMweb
+  boolean upload = await npcs.uploadDatasetFromDicomWeb(
+    orderId,
+    wadoUrl,
+    studyUid,
+    username,  
+    password, 
+    System.out::println // optional progress callback
+  );
+```
+
 ## Authors
 
 Kerrick Cavanaugh _(Lead Software Engineer)_ - kerrick@neuropacs.com
@@ -110,6 +130,15 @@ Kerrick Cavanaugh _(Lead Software Engineer)_ - kerrick@neuropacs.com
 
 - 1.0.0
   - Initial Release
+- 1.0.1
+  - DICOMweb intergation
+  - Bux fixes
+- 1.0.2
+  - Added upload optimzations and error handling improvements.
+- 1.0.3
+  - neuropacs™ Java API latest release.
+  - Added retry logic various optimizations.
+  - Removed unused dependencies
 
 ## License
 

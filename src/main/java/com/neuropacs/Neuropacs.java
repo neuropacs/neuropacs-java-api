@@ -1,10 +1,9 @@
-/**
- * File: Neuropacs.java
- * Description: neuropacs Java API
- * Author: Kerrick Cavanaugh
- * Date Created: 09/15/2024
- * Last Updated: 09/30/2024
+/*!
+ * neuropacs Java API v1.0.3
+ * (c) 2024 neuropacs
+ * Released under the MIT License.
  */
+
 
 package com.neuropacs;
 
