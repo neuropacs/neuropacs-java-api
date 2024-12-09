@@ -21,6 +21,7 @@ Visit our official [wiki](https://neuropacs.github.io) for more technical docume
 ### Installation
 
 Add the dependency to pom.xml
+
 ```xml
 <dependency>
     <groupId>com.neuropacs</groupId>
@@ -30,6 +31,7 @@ Add the dependency to pom.xml
 ```
 
 Build the project
+
 ```shell
 mvn clean install
 ```
@@ -37,6 +39,7 @@ mvn clean install
 ### Usage
 
 Initialization
+
 ```java
     // Import the neuropacs module
     import com.neuropacs.Neuropacs
@@ -53,6 +56,7 @@ Initialization
 ```
 
 Exmaple
+
 ```java
     // Create a session
     String conn = npcs.connect();
@@ -77,6 +81,7 @@ Exmaple
 ```
 
 Example viewing a PNG result
+
 ```java
     // Import required packages
     import javax.imageio.ImageIO;
@@ -99,12 +104,12 @@ Example viewing a PNG result
 
 ## Authors
 
-Kerrick Cavanaugh *(Lead Software Engineer)* - kerrick@neuropacs.com
+Kerrick Cavanaugh _(Lead Software Engineer)_ - kerrick@neuropacs.com
 
 ## Version History
 
 - 1.0.0
-    - Initial Release
+  - Initial Release
 
 ## License
 
