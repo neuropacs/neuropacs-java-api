@@ -1,10 +1,9 @@
-/**
- * File: Neuropacs.java
- * Description: neuropacs Java API
- * Author: Kerrick Cavanaugh
- * Date Created: 09/15/2024
- * Last Updated: 09/30/2024
+/*!
+ * neuropacs Java API v1.0.3
+ * (c) 2024 neuropacs
+ * Released under the MIT License.
  */
+
 
 package com.neuropacs;
 
@@ -32,29 +31,20 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.util.function.Consumer;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonFactory;
-
-import jakarta.json.Json;
-import jakarta.json.stream.JsonParser;
 import jakarta.mail.BodyPart;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.RemapUIDsAttributesCoercion;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.json.JSONReader;
-import org.dcm4che3.util.StreamUtils;
 
 
 // Neuropacs class
 public class Neuropacs {
-    //    Private instance variables
+    // Private instance variables
     private String serverUrl;
     private String apiKey;
     private String originType;
@@ -63,6 +53,9 @@ public class Neuropacs {
     private int maxZipSize = 15 * 1024 * 1024; // 15mb
     HttpClient client = HttpClient.newHttpClient();
     ObjectMapper objectMapper = new ObjectMapper();
+    // Retry configuration
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 1000; // 1 second
 
     /**
      * Neuropacs constructor with all parameters
@@ -321,6 +314,31 @@ public class Neuropacs {
     }
 
     /**
+     * Helper method to execute a callable with retry logic for AWS-related functions.
+     *
+     * @param <T>         The return type.
+     * @param callable    The operation to execute.
+     * @param maxRetries  Maximum number of retries.
+     * @param delayMillis Delay between retries in milliseconds.
+     * @return The result of the callable.
+     * @throws Exception If all retry attempts fail.
+     */
+    private <T> T executeWithRetry(Callable<T> callable, int maxRetries, long delayMillis) throws Exception {
+        int attempt = 0;
+        while (true) {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    throw e;
+                }
+                Thread.sleep(delayMillis);
+            }
+        }
+    }
+
+    /**
      * Start a new S3 multipart upload
      * @param datasetId Base64 datasetId (String)
      * @param zipIndex  Index of zip file
@@ -329,49 +347,55 @@ public class Neuropacs {
      */
     private String newMultipartUpload(String datasetId, int zipIndex, String orderId){
         try{
-            // Build URI
-            URI uri = URI.create(this.serverUrl + "/api/multipartUploadRequest/");
+            return executeWithRetry(() -> {
+                try{
+                    // Build URI
+                    URI uri = URI.create(this.serverUrl + "/api/multipartUploadRequest/");
 
-            // Build request body
-            String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"orderId\": \"%s\" }", datasetId, zipIndex, orderId);
+                    // Build request body
+                    String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"orderId\": \"%s\" }", datasetId, zipIndex, orderId);
 
-            // Encrypt request body
-            byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
+                    // Encrypt request body
+                    byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
 
-            // Build the HTTP request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Content-Type", "text/plain")
-                    .header("Origin-Type", this.originType)
-                    .header("Connection-Id", this.connectionId)
-                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
-                    .build();
+                    // Build the HTTP request
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(uri)
+                            .header("Content-Type", "text/plain")
+                            .header("Origin-Type", this.originType)
+                            .header("Connection-Id", this.connectionId)
+                            .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
+                            .build();
 
-            // Get response body
-            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
-            String responseBody = response.body();
+                    // Get response body
+                    HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+                    String responseBody = response.body();
 
-            Map<String, String> jsonMap;
+                    Map<String, String> jsonMap;
 
-            // Error if not successful
-            if(response.statusCode() != 200){
-                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
-                throw new RuntimeException(jsonMap.get("error"));
-            }
+                    // Error if not successful
+                    if(response.statusCode() != 200){
+                        jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                        throw new RuntimeException(jsonMap.get("error"));
+                    }
 
-            // Decrypt response
-            byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
-            String decryptedString = new String(decryptedCipher, StandardCharsets.UTF_8);
+                    // Decrypt response
+                    byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
+                    String decryptedString = new String(decryptedCipher, StandardCharsets.UTF_8);
 
-            // Convert to JSON
-            jsonMap = this.objectMapper.readValue(decryptedString, Map.class);
+                    // Convert to JSON
+                    jsonMap = this.objectMapper.readValue(decryptedString, Map.class);
 
-            // Extract uploadId field from JSON
-            return jsonMap.get("uploadId");
+                    // Extract uploadId field from JSON
+                    return jsonMap.get("uploadId");
 
+                } catch (Exception e) {
+                    // Throw error
+                    throw new RuntimeException("Multipart upload creation failed: " + e.getMessage(), e);
+                }
+            }, MAX_RETRIES, RETRY_DELAY_MS);
         } catch (Exception e) {
-            // Throw error
-            throw new RuntimeException("Multipart upload creation failed: " + e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -385,43 +409,50 @@ public class Neuropacs {
      */
     private void completeMultipartUpload(String orderId, String datasetId, int zipIndex, String uploadId, List<Map<String, String>> finalParts){
         try{
-            // Build URI
-            URI uri = URI.create(this.serverUrl + "/api/completeMultipartUpload/");
+            executeWithRetry(() -> {
+                try{
+                    // Build URI
+                    URI uri = URI.create(this.serverUrl + "/api/completeMultipartUpload/");
 
-            // Stringify JSON final parts
-            ObjectMapper objectMapper = new ObjectMapper();
-            String jsonFinalParts = objectMapper.writeValueAsString(finalParts);
+                    // Stringify JSON final parts
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String jsonFinalParts = objectMapper.writeValueAsString(finalParts);
 
-            // Build request body
-            String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"uploadId\": \"%s\", \"uploadParts\": %s,\"orderId\": \"%s\" }", datasetId, zipIndex, uploadId, jsonFinalParts, orderId);
+                    // Build request body
+                    String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"uploadId\": \"%s\", \"uploadParts\": %s,\"orderId\": \"%s\" }", datasetId, zipIndex, uploadId, jsonFinalParts, orderId);
 
-            // Encrypt request body
-            byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
+                    // Encrypt request body
+                    byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
 
-            // Build the HTTP request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Content-Type", "text/plain")
-                    .header("Origin-Type", this.originType)
-                    .header("Connection-Id", this.connectionId)
-                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
-                    .build();
+                    // Build the HTTP request
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(uri)
+                            .header("Content-Type", "text/plain")
+                            .header("Origin-Type", this.originType)
+                            .header("Connection-Id", this.connectionId)
+                            .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
+                            .build();
 
-            // Get response
-            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
-            String responseBody = response.body();
+                    // Get response
+                    HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+                    String responseBody = response.body();
 
-            Map<String, String> jsonMap;
+                    Map<String, String> jsonMap;
 
-            // Error if not successful
-            if(response.statusCode() != 200){
-                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
-                throw new RuntimeException(jsonMap.get("error"));
-            }
+                    // Error if not successful
+                    if(response.statusCode() != 200){
+                        jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                        throw new RuntimeException(jsonMap.get("error"));
+                    }
 
+                } catch (Exception e) {
+                    // Throw error
+                    throw new RuntimeException("Multipart upload completion failed: " + e.getMessage(), e);
+                }
+                return null;
+            }, MAX_RETRIES, RETRY_DELAY_MS);
         } catch (Exception e) {
-            // Throw error
-            throw new RuntimeException("Multipart upload completion failed: " + e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -437,112 +468,100 @@ public class Neuropacs {
      */
     private String uploadMultipartChunk(String uploadId, String datasetId, int zipIndex, String orderId, int partNumber, byte[] baos){
         try{
+            return executeWithRetry(() -> {
+                try{
+                    // Get presigned URL for chunk upload \\
+                    HttpResponse<String> response;
+                    // Build request
+                    URI uri = URI.create(this.serverUrl + "/api/multipartPresignedUrl/");
 
-            // Get presigned URL for chunk upload \\
-            // Build request
-            URI uri = URI.create(this.serverUrl + "/api/multipartPresignedUrl/");
+                    String requestBody = String.format("{ \"datasetId\": \"%s\", \"uploadId\": \"%s\", \"partNumber\": \"%d\", \"zipIndex\": \"%d\", \"orderId\": \"%s\" }", datasetId, uploadId, partNumber, zipIndex, orderId);
 
-            String requestBody = String.format("{ \"datasetId\": \"%s\", \"uploadId\": \"%s\", \"partNumber\": \"%d\", \"zipIndex\": \"%d\", \"orderId\": \"%s\" }", datasetId, uploadId, partNumber, zipIndex, orderId);
+                    byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
 
-            byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
+                    // Build the HTTP request
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(uri)
+                            .header("Content-Type", "text/plain")
+                            .header("Origin-Type", this.originType)
+                            .header("Connection-Id", this.connectionId)
+                            .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
+                            .build();
 
-            // Build the HTTP request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .header("Content-Type", "text/plain")
-                    .header("Origin-Type", this.originType)
-                    .header("Connection-Id", this.connectionId)
-                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedRequestBody)))
-                    .build();
+                    // Get response
+                    response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // Get response
-            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+                    // Get respone body
+                    String responseBody = response.body();
 
-            // Get respone body
-            String responseBody = response.body();
+                    Map<String, String> jsonMap;
 
-            Map<String, String> jsonMap;
-
-            // Error if not successful
-            if(response.statusCode() != 200){
-                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
-                throw new RuntimeException(jsonMap.get("error"));
-            }
-
-            // Decrypt response
-            byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
-
-            String decryptedString = new String(decryptedCipher, StandardCharsets.UTF_8);
-
-            // Read response as JSON
-            jsonMap = this.objectMapper.readValue(decryptedString, Map.class);
-
-            // Extract presigned URL attribute from JSON response
-            String presignedUrl = jsonMap.get("presignedUrl");
-
-            // Use presigned URL to upload (PUT) \\
-
-            boolean fail = false;
-
-            String Etag = "";
-
-            // Atttempt upload 3 times
-            for(int i = 0; i < 3; i ++){
-                // Build the HTTP request
-                HttpRequest uploadRequest = HttpRequest.newBuilder()
-                        .uri(URI.create(presignedUrl))
-                        .PUT(HttpRequest.BodyPublishers.ofByteArray(baos))
-                        .build();
-
-                // Get upload response
-                HttpResponse<String> uploadResponse = this.client.send(uploadRequest, HttpResponse.BodyHandlers.ofString());
-
-                // Fail if not successful
-                if(uploadResponse.statusCode() != 200){
-                    // Set fail to true and try again
-                    fail = true;
-                }else{
-                    // Extract ETag header
-                    Optional<String> eTagHeader = uploadResponse.headers().firstValue("ETag");
-
-                    if(eTagHeader.isPresent()){
-                        Etag = eTagHeader.get();
-                        break;
-                    }else{
-                        // ETag not present, try again
-                        fail = true;
+                    // Error if not successful
+                    if(response.statusCode() != 200){
+                        jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                        throw new RuntimeException(jsonMap.get("error"));
                     }
+
+                    // Decrypt response
+                    byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
+
+                    String decryptedString = new String(decryptedCipher, StandardCharsets.UTF_8);
+
+                    // Read response as JSON
+                    jsonMap = this.objectMapper.readValue(decryptedString, Map.class);
+
+                    // Extract presigned URL attribute from JSON response
+                    String presignedUrl = jsonMap.get("presignedUrl");
+
+                    if (presignedUrl == null || presignedUrl.isEmpty()) {
+                        throw new RuntimeException("Presigned URL not present in AWS response.");
+                    }
+
+                    // Use presigned URL to upload (PUT) \\
+                    // Build the HTTP request
+                    HttpRequest uploadRequest = HttpRequest.newBuilder()
+                            .uri(URI.create(presignedUrl))
+                            .PUT(HttpRequest.BodyPublishers.ofByteArray(baos))
+                            .build();
+
+                    // Get upload response
+                    response = this.client.send(uploadRequest, HttpResponse.BodyHandlers.ofString());
+
+                    if(response.statusCode() != 200){
+                        throw new RuntimeException(response.body());
+                    }
+
+                    Optional<String> eTagHeader = response.headers().firstValue("ETag");
+
+                    if(eTagHeader.isEmpty()){
+                        throw new RuntimeException("ETag header not present in AWS response.");
+                    }
+
+                    // Return ETag
+                    return eTagHeader.get();
+                } catch (Exception e) {
+                    // Throw error
+                    throw new RuntimeException("Upload part failed: " + e.getMessage(), e);
                 }
-
-            }
-
-            // If failed after 3 attempts, throw error
-            if(fail){
-                throw new RuntimeException("Upload failed after 3 attempts. Try again later.");
-            }
-
-            // Return ETag
-            return Etag;
-
-        } catch (Exception e) {
-            // Throw error
-            throw new RuntimeException("Upload part failed: " + e.getMessage(), e);
+            }, MAX_RETRIES, RETRY_DELAY_MS);
+        }catch (Exception e) {
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
     /**
      * Use QIDO-RS to retrieve instance URLs
-     * @param dicomWebBaseUrl Base URL of the DICOMweb server
+     * @param wadoUrl URL to access DICOM images via the WADO-RS protocol (e.g. 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
      * @param studyInstanceUID Unique Study Instance UID of the study to be retrieved.
      * @param username Username for basic authentication
      * @param password Password for basic authentication
      * @return List of instance URIs
      */
-    private static List<String> queryInstances(String dicomWebBaseUrl, String studyInstanceUID, String username, String password) throws Exception {
+    private static List<String> queryInstances(String wadoUrl, String studyInstanceUID, String username, String password) throws Exception {
         List<String> sopInstanceUIDs = new ArrayList<>();
 
         // Build the URI for the QIDO-RS query
-        String qidoUriStr = dicomWebBaseUrl + "/studies/" + studyInstanceUID + "/instances";
+        String qidoUriStr = wadoUrl + "/studies/" + studyInstanceUID + "/instances";
         URI qidoUri = new URI(qidoUriStr);
 
         // Create an HTTP client
@@ -1083,22 +1102,22 @@ public class Neuropacs {
 
 
     /**
-     * Upload a dataset from DICOMweb with callback
+     * Upload a dataset via DICOMweb WADO-RS protocol with callback
      * @param orderId Unique base64 identifier for the order.
-     * @param dicomWebBaseUrl Base URL of the DICOMweb server (e.g., 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
+     * @param wadoUrl URL to access DICOM images via the WADO-RS protocol (e.g. 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
      * @param studyUid Unique Study Instance UID of the study to be retrieved.
      * @param username Username for basic authentication (use 'null' if not required)
      * @param password Password for basic authentication (use 'null' if not required)
      * @param callback Callback function invoked with upload progress.
      * @return Boolean indicating upload status.
      */
-    public boolean uploadDatasetFromDicomWeb(String orderId, String dicomWebBaseUrl, String studyUid, String username, String password, Consumer<String> callback){
+    public boolean uploadDatasetFromDicomWeb(String orderId, String wadoUrl, String studyUid, String username, String password, Consumer<String> callback){
         try {
             if(this.connectionId == null || this.aesKey == null){
                 throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
             }
             // Use QIDO-RS to get list of SOP Instance UIDs
-            List<String> sopInstanceURIs = queryInstances(dicomWebBaseUrl, studyUid, username, password);
+            List<String> sopInstanceURIs = queryInstances(wadoUrl, studyUid, username, password);
 
             int totalFiles = sopInstanceURIs.size();
 
@@ -1218,21 +1237,21 @@ public class Neuropacs {
     }
 
     /**
-     * Upload a dataset from DICOMweb
+     * Upload a dataset via DICOMweb WADO-RS protocol.
      * @param orderId Unique base64 identifier for the order.
-     * @param dicomWebBaseUrl Base URL of the DICOMweb server (e.g., 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
+     * @param wadoUrl URL to access DICOM images via the WADO-RS protocol (e.g. 'http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs').
      * @param studyUid Unique Study Instance UID of the study to be retrieved.
      * @param username Username for basic authentication (use 'null' if not required)
      * @param password Password for basic authentication (use 'null' if not required)
      * @return Boolean indicating upload status.
      */
-    public boolean uploadDatasetFromDicomWeb(String orderId, String dicomWebBaseUrl, String studyUid, String username, String password){
+    public boolean uploadDatasetFromDicomWeb(String orderId, String wadoUrl, String studyUid, String username, String password){
         try {
             if(this.connectionId == null || this.aesKey == null){
                 throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
             }
             // Use QIDO-RS to get list of SOP Instance UIDs
-            List<String> sopInstanceURIs = queryInstances(dicomWebBaseUrl, studyUid, username, password);
+            List<String> sopInstanceURIs = queryInstances(wadoUrl, studyUid, username, password);
 
             int totalFiles = sopInstanceURIs.size();
 
