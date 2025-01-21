@@ -6,10 +6,10 @@
 
     <groupId>com.neuropacs</groupId>
     <artifactId>neuropacs-java-api</artifactId>
-    <version>1.0.3</version>
+    <version>2.0</version>
     <packaging>jar</packaging>
 
-    <name>neuropacs-js-api</name>
+    <name>neuropacs-java-api</name>
     <description>The neuropacs™ system is a software application intended to receive and analyze diffusion MRI data from patients aged 40 years and older presenting with Parkinson's disease (PD) symptoms. The neuropacs™ system provides a report to aid neuroradiologists and/or neurologists in identifying patients with Atypical Parkinsonism (i.e., multiple system atrophy Parkinsonian variant (MSAp), or progressive supranuclear palsy (PSP)). The results of the neuropacs™ system are intended to provide supplemental information in conjunction with a standard neurological assessment and other clinical tests. Patient management decisions should not be made solely on the basis of analysis by the neuropacs™ system.</description>
     <url>https://neuropacs.github.io/</url>
 

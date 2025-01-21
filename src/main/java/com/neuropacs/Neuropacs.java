@@ -40,6 +40,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.BodyPart;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 // Neuropacs class
@@ -1567,4 +1570,93 @@ public class Neuropacs {
             throw new RuntimeException("Status check failed: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Get job results for a specified order in a specified format
+     * @param format Format of file data ('txt'/'xml'/'json'/'png')
+     * @param startDate Start date of report date range (MM/DD/YYYY)
+     * @param endDate End date of report date range (MM/DD/YYYY)
+     * @return  Result string in specified format
+     */
+    public String getReport(String format, String startDate, String endDate){
+        try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+            sdf.setLenient(false);
+
+            Date startInputDate, endInputDate;
+
+            try {
+                // Parse the dates
+                startInputDate = sdf.parse(startDate);
+                endInputDate = sdf.parse(endDate);
+            } catch (ParseException e) {
+                throw new Exception("Invalid date format (MM/DD/YYYY).");
+            }
+
+            // Check if dates are in the future
+            Date today = new Date();
+            today = sdf.parse(sdf.format(today)); // Remove time component
+
+            if (startInputDate.after(today) || endInputDate.after(today)) {
+                throw new Exception("Provided date must not exceed current date.");
+            }
+
+            // Check if startDate is after endDate
+            if (startInputDate.after(endInputDate)) {
+                throw new Exception("startDate must not exceed endDate.");
+            }
+
+            // Build URI
+            URI uri = URI.create(this.serverUrl + "/api/getReport/");
+
+            // Set result string to lowercase
+            format = format.toLowerCase();
+
+            // Check if format is valid
+            String[] allowedFormats = {"txt", "json", "email"};
+            if(!Arrays.asList(allowedFormats).contains(format)){
+                throw new RuntimeException("Invalid format. Valid formats include: \"txt\", \"json\", \"email\".");
+            }
+
+            // Build request body
+            String requestBody = String.format("{ \"format\": \"%s\", \"startDate\": \"%s\", \"endDate\": \"%s\" }", format, startDate, endDate);
+
+            // Encrypt request body
+            byte[] encryptedBody = this.encryptAesCtr(requestBody, this.aesKey);
+
+            // Build the HTTP request
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Content-Type", "text/plain")
+                    .header("Origin-Type", this.originType)
+                    .header("Connection-Id", this.connectionId)
+                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedBody)))
+                    .build();
+
+            // Get response
+            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            Map<String, String> jsonMap;
+
+            // Error if not successful
+            if(response.statusCode() != 200){
+                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                throw new RuntimeException(jsonMap.get("error"));
+            }
+
+            // Return decrypted response body
+            byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
+            return new String(decryptedCipher, StandardCharsets.UTF_8);
+
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("Report retrieval failed: " + e.getMessage(), e);
+        }
+    }
+
 }

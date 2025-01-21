@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="99d86497-528f-4f1a-9267-b964c53cee94" name="Changes" comment="">
+    <list default="true" id="64fdf4fd-3e52-425c-a7bb-0022cd337b48" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,20 +34,108 @@
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 5
 }</component>
-  <component name="ProjectId" id="2p8AdXEtONcfxnDmCJY9XYXGQSS" />
+  <component name="ProjectId" id="2pzsdUXK8rt3TS64I4alas4qtIE" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Application.Main.executor": "Run",
+    "JUnit.NeuropacsTest.executor": "Run",
+    "JUnit.NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval.executor": "Run",
+    "JUnit.NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval.executor": "Run",
+    "JUnit.NeuropacsTest.testInvalidDatasetPath.executor": "Run",
+    "JUnit.NeuropacsTest.testInvalidEndDateFormatInReportRetrieval.executor": "Run",
+    "JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun.executor": "Run",
+    "JUnit.NeuropacsTest.testSuccessfulDatasetUpload.executor": "Run",
+    "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat.executor": "Run",
+    "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInTxtFormat.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "version/1.0.3",
+    "git-widget-placeholder": "2.0/feature/report",
     "kotlin-language-version-configured": "true"
   }
 }]]></component>
-  <component name="RunManager">
+  <component name="RunManager" selected="JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun">
+    <configuration name="NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testEndDateBeforeStartDateInReportRetrieval" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testEndDateExceedsCurrentDateInReportRetrieval" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="NeuropacsTest.testInvalidEndDateFormatInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testInvalidEndDateFormatInReportRetrieval" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="NeuropacsTest.testNoUsagesRemainingOnJobRun" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testNoUsagesRemainingOnJobRun" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testSuccessfulReportRetrievalInEmailFormat" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="JetRunConfigurationType">
       <module name="neuropacs-api" />
       <method v="2">
@@ -59,15 +149,24 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun" />
+        <item itemvalue="JUnit.NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat" />
+        <item itemvalue="JUnit.NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval" />
+        <item itemvalue="JUnit.NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval" />
+        <item itemvalue="JUnit.NeuropacsTest.testInvalidEndDateFormatInReportRetrieval" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="99d86497-528f-4f1a-9267-b964c53cee94" name="Changes" comment="" />
-      <created>1732137418439</created>
+      <changelist id="64fdf4fd-3e52-425c-a7bb-0022cd337b48" name="Changes" comment="" />
+      <created>1733780327398</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1732137418439</updated>
+      <updated>1733780327398</updated>
     </task>
     <servers />
   </component>
