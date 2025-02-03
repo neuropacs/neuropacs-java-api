@@ -102,12 +102,20 @@
                 <tr>
                   <td>1.0.3</td>
                   <td>8.5MB</td>
-                  <td>
-                    neuropacs™ Java API latest release. Added upload
-                    optimzations and retry logic.
-                  </td>
+                  <td>Added upload optimzations and retry logic.</td>
                   <td>
                     https://d3tequ3xv41td3.cloudfront.net/java/neuropacs-java-api-1.0.3.jar
+                  </td>
+                </tr>
+                <tr>
+                  <td>1.0.4</td>
+                  <td>8.7MB</td>
+                  <td>
+                    neuropacs™ Java API latest release. Added getReport API,
+                    qcCheck API, and "features" option for getResults.
+                  </td>
+                  <td>
+                    https://d3tequ3xv41td3.cloudfront.net/java/neuropacs-java-api-1.0.4.jar
                   </td>
                 </tr>
               </tbody>
@@ -150,7 +158,8 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
   <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key"</span>; <span class="code-comment">// API key</span>
   <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url"</span>; <span class="code-comment">// neuropacs™ serverl URL</span>
   <span class="code-keyword">String</span> productName = <span class="code-string">"Atypical/MSAp/PSP-v1.0"</span>; <span class="code-comment">// Desired neuropacs™ product</span>
-  <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON"</span>; <span class="code-comment">// Output format of results</span>
+  <span class="code-keyword">String</span> predictionFormat = <span class="code-string">"JSON"</span>; <span class="code-comment">// Output format of order results ("TXT"/"JSON"/"XML"/"FEATURES")</span>
+  <span class="code-keyword">String</span> qcForamt = <span class="code-string">"CSV"</span>; <span class="code-comment">// Output format of QC results ("CSV"/"TXT"/"JSON")</span>
   <span class="code-keyword">String</span> originType = <span class="code-string">"my_application"</span>; <span class="code-comment">// Requestor origin</span>
 
   <span class="code-comment">// Initialize the API</span>
@@ -174,6 +183,9 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
     <span class="code-string">"/path/to/dataset"</span>, 
     System.out::println <span class="code-comment">// optional progress callback</span>
   );
+
+  <span class="code-comment">// Run QC/Compliance check on uploaded dataset (not required)</span>
+  <span class="code-keyword">String</span> qcResults = npcs.<span class="code-function">qcCheck</span>(orderId, qcFormat);
 
   <span class="code-comment">// Start an order</span>
   <span class="code-keyword">String</span> orderStart = npcs.<span class="code-function">runJob</span>(orderId, productName);
@@ -210,6 +222,35 @@ java -cp path/to/neuropacs-java-api-&lt;version&gt;.jar:out com.yourpackage.Your
 
   <span class="code-comment">// Save the image to a file</span>
   <span class="code-keyword">ImageIO</span>.<span class="code-function">write</span>(image, "png", <span class="code-keyword">new</span> <span class="code-keyword">File</span>(<span class="code-string">"neuropacs_report.png"</span>));
+  </code></pre>
+        </div>
+
+        <div class="code-section">
+          <h3>API Key Usage Report</h3>
+          <p>
+            Generate a structured API key usage report for any neuropacs™ API
+            key. If an admin API key is used. An aggregated report will be
+            created with all keys associated with the same institution. If
+            "email" format is used, an email will be sent to the admin
+            associated with the specified API key.
+          </p>
+          <pre class="code-container"><code class="language-java">
+  <span class="code-comment">// Define neuropacs parameters</span>
+  <span class="code-keyword">String</span> apiKey = <span class="code-string">"your_api_key"</span>; <span class="code-comment">// API key</span>
+  <span class="code-keyword">String</span> serverUrl = <span class="code-string">"server_url"</span>; <span class="code-comment">// neuropacs™ serverl URL</span>
+  <span class="code-keyword">String</span> originType = <span class="code-string">"my_application"</span>; <span class="code-comment">// Requestor origin</span>
+  <span class="code-keyword">String</span> format = <span class="code-string">"JSON"</span>; <span class="code-comment">// Format of report ("TXT"/"JSON"/"EMAIL")</span>
+  <span class="code-keyword">String</span> startDate = <span class="code-string">"10/1/2025"</span>; <span class="code-comment">// Start date of report (mM/dD/YYYY)</span>
+  <span class="code-keyword">String</span> endDate = <span class="code-string">"12/15/2025"</span>; <span class="code-comment">// End date of report (mM/dD/YYYY)</span>
+
+  <span class="code-comment">// Initialize the API</span>
+  <span class="code-keyword">Neuropacs</span> npcs = <span class="code-keyword">new</span> <span class="code-keyword">Neuropacs</span>(serverUrl, apiKey, originType);
+
+  <span class="code-comment">// Create a session</span>
+  <span class="code-keyword">String</span> conn = npcs.<span class="code-function">connect();</span>
+
+  <span class="code-comment">// Generate the report</span>
+  <span class="code-keyword">String</span> report = npcs.<span class="code-function">getReport</span>(format, startDate, endDate);
   </code></pre>
         </div>
 
