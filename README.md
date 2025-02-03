@@ -57,6 +57,7 @@ Neuropacs npcs = new Neuropacs(serverUrl, apiKey, originType);
 ```
 
 #### Working Example
+
 ```java
 // Create a session
 String conn = npcs.connect();
@@ -84,7 +85,9 @@ byte[] resultsPng = npcs.getResultsPng(orderId);
 ```
 
 #### Example viewing a PNG result
+
 Download a PNG result file and view it.
+
 ```java
     // Define neuropacs parameters
     String apiKey = "your_api_key"; // API key
@@ -93,13 +96,15 @@ Download a PNG result file and view it.
     String predictionFormat = "JSON"; // Output format of order results ("TXT"/"JSON"/"XML"/"FEATURES")
     Sring qcFormat = "CSV"; // Output format of QC results ("CSV"/"TXT"/"JSON")
     String originType = "my_application"; // Requestor origin
-    
+
     // Initialize the API
     Neuropacs npcs = new Neuropacs(serverUrl, apiKey, originType);
 ```
 
 #### API Key Usage Report
+
 Generate a structured API key usage report for any neuropacs™ API key. If an admin API key is used. An aggregated report will be created with all keys associated with the same institution. If "email" format is used, an email will be sent to the admin associated with the specified API key.
+
 ```java
 // Define neuropacs parameters
 String apiKey = "your_api_key"; // API key
@@ -115,12 +120,14 @@ Neuropacs npcs = new Neuropacs(serverUrl, apiKey, originType);
 // Create a session
 String conn = npcs.connect();
 
-// Generate the report 
+// Generate the report
 String report = npcs.getReport(format, startDate, endDate);
 ```
 
-### DICOMweb WADO-RS Integration
+#### DICOMweb WADO-RS Integration
+
 The API retrieves and processes images directly from DICOMweb-compliant servers, enabling neuropacs™ analysis for streamlined diagnostic workflows.
+
 ```java
 // Define DICOMweb parameters
 String wadoUrl = "http://localhost:8080/dcm4chee-arc/aets/DCM4CHEE/rs";
@@ -133,8 +140,8 @@ boolean upload = await npcs.uploadDatasetFromDicomWeb(
     orderId,
     wadoUrl,
     studyUid,
-    username,  
-    password, 
+    username,
+    password,
     System.out::println // optional progress callback
  );
 ```
