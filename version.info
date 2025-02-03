@@ -1,6 +1,7 @@
-v1.0.3:
-    - Change 'dicomWebBaseUrl' -> 'wadoUrl'
-    - Update param description for wadoUrl
-    - Removed unused imports
-    - Add 'executeWithRetry' function for AWS-related functions
+v1.0.4:
+    - Add getReport API to retrieve a structure API key usage report for a specified date range
+    - Add qcCheck API to retrieve QC/Compliance check results
+    - Add "features" option to getResults API to retrieve contents of AIDP.csv features
+    - Add "final_part" param to complete_multipart_upload to indicate last chunk of upload
+        - needed for QC backend to detect a completed upload
 

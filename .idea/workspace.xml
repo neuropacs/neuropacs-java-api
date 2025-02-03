@@ -5,12 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="64fdf4fd-3e52-425c-a7bb-0022cd337b48" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/ci.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/ci.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/version.info" beforeDir="false" afterPath="$PROJECT_DIR$/version.info" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,11 +54,11 @@
     "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat.executor": "Run",
     "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInTxtFormat.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "2.0/feature/qc",
+    "git-widget-placeholder": "version/1.0.4",
     "kotlin-language-version-configured": "true"
   }
 }]]></component>
-  <component name="RunManager">
+  <component name="RunManager" selected="JUnit.NeuropacsTest.testDatasetInUseInQcCheck">
     <configuration name="NeuropacsTest.testDatasetInUseInQcCheck" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="neuropacs-java-api" />
       <extension name="coverage">
