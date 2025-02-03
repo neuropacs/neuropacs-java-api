@@ -37,6 +37,7 @@ import java.util.zip.ZipOutputStream;
 import java.util.function.Consumer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.mail.util.PropUtil;
 import jakarta.mail.BodyPart;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
@@ -409,8 +410,9 @@ public class Neuropacs {
      * @param zipIndex  Zip file index
      * @param uploadId  Base64 uploadId
      * @param finalParts    JSON object (stringified) used by S3 to ensure all pieces delivered to bucket
+     * @param finalPart Is this the final part of the dataset (0==no, 1==yes)
      */
-    private void completeMultipartUpload(String orderId, String datasetId, int zipIndex, String uploadId, List<Map<String, String>> finalParts){
+    private void completeMultipartUpload(String orderId, String datasetId, int zipIndex, String uploadId, List<Map<String, String>> finalParts, int finalPart){
         try{
             executeWithRetry(() -> {
                 try{
@@ -422,7 +424,7 @@ public class Neuropacs {
                     String jsonFinalParts = objectMapper.writeValueAsString(finalParts);
 
                     // Build request body
-                    String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"uploadId\": \"%s\", \"uploadParts\": %s,\"orderId\": \"%s\" }", datasetId, zipIndex, uploadId, jsonFinalParts, orderId);
+                    String requestBody = String.format("{ \"datasetId\": \"%s\", \"zipIndex\": \"%d\", \"uploadId\": \"%s\", \"uploadParts\": %s, \"orderId\": \"%s\", \"finalPart\": \"%d\" }", datasetId, zipIndex, uploadId, jsonFinalParts, orderId, finalPart);
 
                     // Encrypt request body
                     byte[] encryptedRequestBody = this.encryptAesCtr(requestBody, this.aesKey);
@@ -880,7 +882,11 @@ public class Neuropacs {
                     finalParts.add(part);
 
                     // Complete multipart upload
-                    this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                    if(filesUploaded - 1 == totalFiles){
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
+                    }else{
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 0);
+                    }
 
                     // Reset the ByteArrayOutputStream
                     byteArrayOutputStream.reset();
@@ -943,7 +949,7 @@ public class Neuropacs {
                 finalParts.add(part);
 
                 // Complete multipart upload
-                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
             }else{
                 // Close the ZipOutputStream if it's not already closed
                 zos.close();
@@ -978,10 +984,17 @@ public class Neuropacs {
                 throw new RuntimeException("datasetPath does not exist.");
             }
 
+            // Calculate total number of files in folder
+            long totalFiles = Files.walk(directoryPath)
+                    .parallel()
+                    .filter(p -> !p.toFile().isDirectory() && !p.getFileName().toString().equals(".DS_Store"))
+                    .count();
+
             // Hash set to hold unique filenames (cannot have repeats)
             Set<String> uniqueFilenames = new HashSet<>();
 
             int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1035,7 +1048,11 @@ public class Neuropacs {
                     finalParts.add(part);
 
                     // Complete multipart upload
-                    this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                    if(filesUploaded - 1 == totalFiles){
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
+                    }else{
+                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 0);
+                    }
 
                     // Reset the ByteArrayOutputStream
                     byteArrayOutputStream.reset();
@@ -1059,6 +1076,9 @@ public class Neuropacs {
                     }
                 }
                 zos.closeEntry();
+
+                // Increment files uploaded
+                filesUploaded++;
             }
 
             // Include remaining files (if existing open zip stream)
@@ -1087,7 +1107,7 @@ public class Neuropacs {
                 finalParts.add(part);
 
                 // Complete multipart upload
-                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
             }else{
                 // Close the ZipOutputStream if it's not already closed
                 zos.close();
@@ -1165,7 +1185,11 @@ public class Neuropacs {
                         finalParts.add(part);
 
                         // Complete multipart upload
-                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                        if(filesUploaded - 1 == totalFiles){
+                            this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
+                        }else{
+                            this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 0);
+                        }
 
                         // Reset the ByteArrayOutputStream
                         byteArrayOutputStream.reset();
@@ -1224,7 +1248,7 @@ public class Neuropacs {
                 finalParts.add(part);
 
                 // Complete multipart upload
-                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
             }else{
                 // Close the ZipOutputStream if it's not already closed
                 zos.close();
@@ -1259,6 +1283,7 @@ public class Neuropacs {
             int totalFiles = sopInstanceURIs.size();
 
             int partIndex = 1; // Counts index of zip file
+            int filesUploaded = 0; // Track number of files uploaded
 
             // Byte stream to hold zip contents
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1298,7 +1323,11 @@ public class Neuropacs {
                         finalParts.add(part);
 
                         // Complete multipart upload
-                        this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                        if(filesUploaded - 1 == totalFiles){
+                            this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
+                        }else{
+                            this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 0);
+                        }
 
                         // Reset the ByteArrayOutputStream
                         byteArrayOutputStream.reset();
@@ -1318,6 +1347,8 @@ public class Neuropacs {
 
                     zos.closeEntry();
 
+                    // Increment files uploaded
+                    filesUploaded++;
                 }
             }
 
@@ -1347,7 +1378,7 @@ public class Neuropacs {
                 finalParts.add(part);
 
                 // Complete multipart upload
-                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts);
+                this.completeMultipartUpload(orderId, orderId, zipIndex, uploadId, finalParts, 1);
             }else{
                 // Close the ZipOutputStream if it's not already closed
                 zos.close();
@@ -1465,7 +1496,7 @@ public class Neuropacs {
     /**
      * Get job results for a specified order in a specified format
      * @param orderId Unique base64 identifier for the order.
-     * @param format Format of file data ('txt'/'xml'/'json'/'png')
+     * @param format Format of file data ('txt'/'xml'/'json','features')
      * @return  Result string in specified format
      */
     public String getResults(String orderId, String format){
@@ -1480,9 +1511,9 @@ public class Neuropacs {
             format = format.toLowerCase();
 
             // Check if format is valid
-            String[] allowedFormats = {"xml", "json", "txt"};
+            String[] allowedFormats = {"xml", "json", "txt", "features"};
             if(!Arrays.asList(allowedFormats).contains(format)){
-                throw new RuntimeException("Invalid format. Valid formats include: \"txt\", \"json\", \"xml\".");
+                throw new RuntimeException("Invalid format. Valid formats include: \"txt\", \"json\", \"xml\", \"features\".");
             }
 
             // Build request body
@@ -1573,7 +1604,7 @@ public class Neuropacs {
 
     /**
      * Get job results for a specified order in a specified format
-     * @param format Format of file data ('txt'/'xml'/'json'/'png')
+     * @param format Format of file data ('txt'/'email'/'json')
      * @param startDate Start date of report date range (MM/DD/YYYY)
      * @param endDate End date of report date range (MM/DD/YYYY)
      * @return  Result string in specified format
@@ -1594,6 +1625,7 @@ public class Neuropacs {
                 startInputDate = sdf.parse(startDate);
                 endInputDate = sdf.parse(endDate);
             } catch (ParseException e) {
+
                 throw new Exception("Invalid date format (MM/DD/YYYY).");
             }
 
@@ -1656,6 +1688,66 @@ public class Neuropacs {
         } catch (Exception e) {
             // Throw error
             throw new RuntimeException("Report retrieval failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get QC/Compliance results for a specified order in a specified format
+     * @param orderId Unique base64 identifier for the order.
+     * @param format Format of file data ('txt'/'csv'/'json')
+     * @return  Result string in specified format
+     */
+    public String qcCheck(String orderId, String format){
+        try{
+            if(this.connectionId == null || this.aesKey == null){
+                throw new RuntimeException("Missing session parameters, start a new session with 'connect()' and try again.");
+            }
+            // Build URI
+            URI uri = URI.create(this.serverUrl + "/api/qcCheck/");
+
+            // Set result string to lowercase
+            format = format.toLowerCase();
+
+            // Check if format is valid
+            String[] allowedFormats = {"xml", "json", "txt"};
+            if(!Arrays.asList(allowedFormats).contains(format)){
+                throw new RuntimeException("Invalid format. Valid formats include: \"txt\", \"csv\", \"json\".");
+            }
+
+            // Build request body
+            String requestBody = String.format("{ \"orderId\": \"%s\", \"format\": \"%s\" }", orderId, format);
+
+            // Encrypt request body
+            byte[] encryptedBody = this.encryptAesCtr(requestBody, this.aesKey);
+
+            // Build the HTTP request
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Content-Type", "text/plain")
+                    .header("Origin-Type", this.originType)
+                    .header("Connection-Id", this.connectionId)
+                    .POST(HttpRequest.BodyPublishers.ofString(new String(encryptedBody)))
+                    .build();
+
+            // Get response
+            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            Map<String, String> jsonMap;
+
+            // Error if not successful
+            if(response.statusCode() != 200){
+                jsonMap = this.objectMapper.readValue(responseBody, Map.class);
+                throw new RuntimeException(jsonMap.get("error"));
+            }
+
+            // Return decrypted response body
+            byte[] decryptedCipher = this.decryptAesCtr(responseBody, this.aesKey);
+            return new String(decryptedCipher, StandardCharsets.UTF_8);
+
+        } catch (Exception e) {
+            // Throw error
+            throw new RuntimeException("QC check failed: " + e.getMessage(), e);
         }
     }
 

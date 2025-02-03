@@ -11,10 +11,9 @@ import java.util.Date;
 
 public class NeuropacsTest {
     String serverUrl = "https://zq5jg2kqvj.execute-api.us-east-1.amazonaws.com/staging";
-//    String apiKey = System.getenv("ADMIN_API_KEY");
-    String adminKey = "Ln0Zf11LRP9vVB8UgxJNl4RSmoBERexb83CiOvCq";
-    String regKey = "r7TK56hInGaj3aNug4Mmc5mqCZ3fVQjT1HilX6Tp";
-    String noUsagesRemaining = "DsX5YzUkTq84ddbeprc29Bm20u0ZEdO9jNQxL3Mg";
+    String adminKey = System.getenv("ADMIN_API_KEY");
+    String regKey = System.getenv("REG_API_KEY");
+    String noUsagesRemainingKey = System.getenv("NO_USAGES_REMAINING_API_KEY");
     String invalidApiKey = "not_real";
     String productId = "Atypical/MSAp/PSP-v1.0";
     String originType = "Java Integration Tests";
@@ -108,7 +107,7 @@ public class NeuropacsTest {
 
     @Test
     public void testNoUsagesRemainingOnJobRun(){
-        Neuropacs npcs = new Neuropacs(serverUrl, noUsagesRemaining, originType);
+        Neuropacs npcs = new Neuropacs(serverUrl, noUsagesRemainingKey, originType);
         npcs.connect();
         Exception exception = assertThrows(Exception.class, () -> {
             npcs.runJob(invalidOrderId, productId);
@@ -162,11 +161,18 @@ public class NeuropacsTest {
         assertTrue(includesResults);
     }
 
+    @Test
+    public void testSuccessfulFeaturesRetrieval(){
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
+        npcs.connect();
+        String results = npcs.getResults("TEST", "features");
+        assertTrue(results != null && !results.isEmpty() && results.contains("Subject"));
+    }
 
     @Test
     public void testSuccessfulReportRetrievalInTxtFormat() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -179,9 +185,9 @@ public class NeuropacsTest {
         String todayStr = sdf.format(today);
         String tenDaysAgoStr = sdf.format(tenDaysAgo);
 
-        npcsTemp.connect();
+        npcs.connect();
 
-        String report = npcsTemp.getReport("txt", tenDaysAgoStr, todayStr);
+        String report = npcs.getReport("txt", tenDaysAgoStr, todayStr);
 
         assertTrue(report != null && !report.isEmpty() && report.contains("apiKey"));
     }
@@ -189,7 +195,7 @@ public class NeuropacsTest {
     @Test
     public void testSuccessfulReportRetrievalInEmailFormat() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -202,9 +208,9 @@ public class NeuropacsTest {
         String todayStr = sdf.format(today);
         String tenDaysAgoStr = sdf.format(tenDaysAgo);
 
-        npcsTemp.connect();
+        npcs.connect();
 
-        String report = npcsTemp.getReport("email", tenDaysAgoStr, todayStr);
+        String report = npcs.getReport("email", tenDaysAgoStr, todayStr);
 
         assertTrue(report != null && !report.isEmpty() && report.contains("success"));
     }
@@ -212,7 +218,7 @@ public class NeuropacsTest {
     @Test
     public void testInvalidEndDateFormatInReportRetrieval() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -224,10 +230,10 @@ public class NeuropacsTest {
 
         String tenDaysAgoStr = sdf.format(tenDaysAgo);
 
-        npcsTemp.connect();
+        npcs.connect();
 
         Exception exception = assertThrows(Exception.class, () -> {
-            npcsTemp.getReport("email", tenDaysAgoStr, "invalid");
+            npcs.getReport("email", tenDaysAgoStr, "invalid");
         });
 
         String actualMessage = exception.getMessage();
@@ -238,7 +244,7 @@ public class NeuropacsTest {
     @Test
     public void testInvalidStartDateFormatInReportRetrieval() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -250,10 +256,10 @@ public class NeuropacsTest {
 
         String tenDaysAgoStr = sdf.format(tenDaysAgo);
 
-        npcsTemp.connect();
+        npcs.connect();
 
         Exception exception = assertThrows(Exception.class, () -> {
-            npcsTemp.getReport("email", "invalid", tenDaysAgoStr);
+            npcs.getReport("email", "invalid", tenDaysAgoStr);
         });
 
         String actualMessage = exception.getMessage();
@@ -264,7 +270,7 @@ public class NeuropacsTest {
     @Test
     public void testEndDateExceedsCurrentDateInReportRetrieval() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -277,10 +283,10 @@ public class NeuropacsTest {
         String todayStr = sdf.format(today);
         String tenDaysAheadStr = sdf.format(tenDaysAhead);
 
-        npcsTemp.connect();
+        npcs.connect();
 
         Exception exception = assertThrows(Exception.class, () -> {
-            npcsTemp.getReport("email", todayStr, tenDaysAheadStr);
+            npcs.getReport("email", todayStr, tenDaysAheadStr);
         });
 
         String actualMessage = exception.getMessage();
@@ -291,7 +297,7 @@ public class NeuropacsTest {
     @Test
     public void testStartDateExceedsCurrentDateInReportRetrieval() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -304,10 +310,10 @@ public class NeuropacsTest {
         String todayStr = sdf.format(today);
         String tenDaysAheadStr = sdf.format(tenDaysAhead);
 
-        npcsTemp.connect();
+        npcs.connect();
 
         Exception exception = assertThrows(Exception.class, () -> {
-            npcsTemp.getReport("email", tenDaysAheadStr, todayStr);
+            npcs.getReport("email", tenDaysAheadStr, todayStr);
         });
 
         String actualMessage = exception.getMessage();
@@ -318,7 +324,7 @@ public class NeuropacsTest {
     @Test
     public void testEndDateBeforeStartDateInReportRetrieval() {
         // Initialize Neuropacs
-        Neuropacs npcsTemp = new Neuropacs("https://ud7cvn39n4.execute-api.us-east-1.amazonaws.com/sandbox", "generate_api_key");
+        Neuropacs npcs = new Neuropacs(serverUrl, regKey, originType);
 
         // Calculate dates
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -331,15 +337,85 @@ public class NeuropacsTest {
         String todayStr = sdf.format(today);
         String tenDaysAheadStr = sdf.format(tenDaysAhead);
 
-        npcsTemp.connect();
+        npcs.connect();
 
         Exception exception = assertThrows(Exception.class, () -> {
-            npcsTemp.getReport("email", todayStr, tenDaysAheadStr);
+            npcs.getReport("email", todayStr, tenDaysAheadStr);
         });
 
         String actualMessage = exception.getMessage();
 
         assertEquals(actualMessage, "Report retrieval failed: startDate must not exceed endDate.");
+    }
+
+    @Test
+    public void testSuccessfulQcCheck(){ //will throw ERR_GENERIC error, this is OKAY
+        // Initialize Neuropacs
+        Neuropacs npcs = new Neuropacs(serverUrl, adminKey, originType);
+
+        npcs.connect();
+        String orderId = npcs.newJob();
+        boolean upload = npcs.uploadDatasetFromPath(orderId, "src/test/java/com/neuropacs/sample_dataset");
+        try {
+            // Pause execution for 2 min
+            Thread.sleep(120000);
+        } catch (InterruptedException e) {
+            return;
+        }
+        String qc = npcs.qcCheck(orderId, "txt");
+        assertTrue(qc != null && !qc.isEmpty() && qc.contains("QC FAILED"));
+    }
+
+    @Test
+    public void testInvalidFormatInQcCheck(){ //will throw ERR_GENERIC error, this is OKAY
+        // Initialize Neuropacs
+        Neuropacs npcs = new Neuropacs(serverUrl, adminKey, originType);
+
+        npcs.connect();
+        String orderId = npcs.newJob();
+        Exception exception = assertThrows(Exception.class, () -> {
+            npcs.qcCheck(orderId, "not_real");
+        });
+
+        String actualMessage = exception.getMessage();
+
+        assertEquals(actualMessage, "QC check failed: Invalid format. Valid formats include: \"txt\", \"csv\", \"json\".");
+    }
+
+    @Test
+    public void testNoDatasetFoundInQcCheck(){ //will throw ERR_GENERIC error, this is OKAY
+        // Initialize Neuropacs
+        Neuropacs npcs = new Neuropacs(serverUrl, adminKey, originType);
+
+        npcs.connect();
+        String orderId = npcs.newJob();
+//        boolean upload = npcsTemp.uploadDatasetFromPath(orderId, "src/test/java/com/neuropacs/sample_dataset");
+        Exception exception = assertThrows(Exception.class, () -> {
+            npcs.qcCheck(orderId, "txt");
+        });
+
+        String actualMessage = exception.getMessage();
+
+        assertEquals(actualMessage, "QC check failed: No dataset found. Upload a dataset before running QC.");
+    }
+
+    @Test
+    public void testDatasetInUseInQcCheck(){ //will throw ERR_GENERIC error, this is OKAY
+        // Initialize Neuropacs
+        Neuropacs npcs = new Neuropacs(serverUrl, adminKey, originType);
+
+        npcs.connect();
+        String orderId = npcs.newJob();
+        npcs.uploadDatasetFromPath(orderId, "src/test/java/com/neuropacs/sample_dataset");
+        Exception exception = assertThrows(Exception.class, () -> {
+            npcs.qcCheck(orderId, "txt");
+        });
+
+        String actualMessage = exception.getMessage();
+
+        // Can be either depending on available resources
+        assertTrue(actualMessage.equals("QC check failed: Dataset in use, try again later.") ||
+                actualMessage.equals("QC check failed: QC in progress."));
     }
 
 }

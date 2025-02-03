@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="64fdf4fd-3e52-425c-a7bb-0022cd337b48" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.github/workflows/ci.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/ci.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/neuropacs/Neuropacs.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/neuropacs/NeuropacsTest.java" afterDir="false" />
@@ -42,21 +44,26 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "JUnit.NeuropacsTest.executor": "Run",
+    "JUnit.NeuropacsTest.testDatasetInUseInQcCheck.executor": "Run",
     "JUnit.NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval.executor": "Run",
     "JUnit.NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval.executor": "Run",
     "JUnit.NeuropacsTest.testInvalidDatasetPath.executor": "Run",
     "JUnit.NeuropacsTest.testInvalidEndDateFormatInReportRetrieval.executor": "Run",
+    "JUnit.NeuropacsTest.testInvalidFormatInQcCheck.executor": "Run",
+    "JUnit.NeuropacsTest.testNoDatasetFoundInQcCheck.executor": "Run",
     "JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun.executor": "Run",
     "JUnit.NeuropacsTest.testSuccessfulDatasetUpload.executor": "Run",
+    "JUnit.NeuropacsTest.testSuccessfulFeaturesRetrieval.executor": "Run",
+    "JUnit.NeuropacsTest.testSuccessfulQcCheck.executor": "Run",
     "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat.executor": "Run",
     "JUnit.NeuropacsTest.testSuccessfulReportRetrievalInTxtFormat.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "2.0/feature/report",
+    "git-widget-placeholder": "2.0/feature/qc",
     "kotlin-language-version-configured": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun">
-    <configuration name="NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+  <component name="RunManager">
+    <configuration name="NeuropacsTest.testDatasetInUseInQcCheck" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="neuropacs-java-api" />
       <extension name="coverage">
         <pattern>
@@ -66,13 +73,13 @@
       </extension>
       <option name="PACKAGE_NAME" value="com.neuropacs" />
       <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
-      <option name="METHOD_NAME" value="testEndDateBeforeStartDateInReportRetrieval" />
+      <option name="METHOD_NAME" value="testDatasetInUseInQcCheck" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="NeuropacsTest.testSuccessfulFeaturesRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="neuropacs-java-api" />
       <extension name="coverage">
         <pattern>
@@ -82,13 +89,13 @@
       </extension>
       <option name="PACKAGE_NAME" value="com.neuropacs" />
       <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
-      <option name="METHOD_NAME" value="testEndDateExceedsCurrentDateInReportRetrieval" />
+      <option name="METHOD_NAME" value="testSuccessfulFeaturesRetrieval" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NeuropacsTest.testInvalidEndDateFormatInReportRetrieval" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="NeuropacsTest.testSuccessfulQcCheck" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="neuropacs-java-api" />
       <extension name="coverage">
         <pattern>
@@ -98,23 +105,7 @@
       </extension>
       <option name="PACKAGE_NAME" value="com.neuropacs" />
       <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
-      <option name="METHOD_NAME" value="testInvalidEndDateFormatInReportRetrieval" />
-      <option name="TEST_OBJECT" value="method" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="NeuropacsTest.testNoUsagesRemainingOnJobRun" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="neuropacs-java-api" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.neuropacs.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="com.neuropacs" />
-      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
-      <option name="METHOD_NAME" value="testNoUsagesRemainingOnJobRun" />
+      <option name="METHOD_NAME" value="testSuccessfulQcCheck" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -136,6 +127,22 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="NeuropacsTest.testSuccessfulReportRetrievalInTxtFormat" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="neuropacs-java-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.neuropacs.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.neuropacs" />
+      <option name="MAIN_CLASS_NAME" value="com.neuropacs.NeuropacsTest" />
+      <option name="METHOD_NAME" value="testSuccessfulReportRetrievalInTxtFormat" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="JetRunConfigurationType">
       <module name="neuropacs-api" />
       <method v="2">
@@ -151,11 +158,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="JUnit.NeuropacsTest.testNoUsagesRemainingOnJobRun" />
+        <item itemvalue="JUnit.NeuropacsTest.testSuccessfulQcCheck" />
+        <item itemvalue="JUnit.NeuropacsTest.testSuccessfulFeaturesRetrieval" />
+        <item itemvalue="JUnit.NeuropacsTest.testDatasetInUseInQcCheck" />
+        <item itemvalue="JUnit.NeuropacsTest.testSuccessfulReportRetrievalInTxtFormat" />
         <item itemvalue="JUnit.NeuropacsTest.testSuccessfulReportRetrievalInEmailFormat" />
-        <item itemvalue="JUnit.NeuropacsTest.testEndDateBeforeStartDateInReportRetrieval" />
-        <item itemvalue="JUnit.NeuropacsTest.testEndDateExceedsCurrentDateInReportRetrieval" />
-        <item itemvalue="JUnit.NeuropacsTest.testInvalidEndDateFormatInReportRetrieval" />
       </list>
     </recent_temporary>
   </component>
