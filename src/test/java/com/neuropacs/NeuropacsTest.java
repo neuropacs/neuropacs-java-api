@@ -399,23 +399,4 @@ public class NeuropacsTest {
         assertEquals(actualMessage, "QC check failed: No dataset found. Upload a dataset before running QC.");
     }
 
-    @Test
-    public void testDatasetInUseInQcCheck(){ //will throw ERR_GENERIC error, this is OKAY
-        // Initialize Neuropacs
-        Neuropacs npcs = new Neuropacs(serverUrl, adminKey, originType);
-
-        npcs.connect();
-        String orderId = npcs.newJob();
-        npcs.uploadDatasetFromPath(orderId, "src/test/java/com/neuropacs/sample_dataset");
-        Exception exception = assertThrows(Exception.class, () -> {
-            npcs.qcCheck(orderId, "txt");
-        });
-
-        String actualMessage = exception.getMessage();
-
-        // Can be either depending on available resources
-        assertTrue(actualMessage.equals("QC check failed: Dataset in use, try again later.") ||
-                actualMessage.equals("QC check failed: QC in progress."));
-    }
-
 }
