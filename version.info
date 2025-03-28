@@ -1,4 +1,5 @@
 v1.0.5:
     - remove testDatasetInUseInQcCheck integration test
+    - add sbom.json and sbom plugin
 
 
